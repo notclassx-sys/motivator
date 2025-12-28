@@ -1,0 +1,9 @@
+{
+  "name": "Motivator AI Pro",
+  "description": "A high-performance productivity and motivation app featuring luxury Lion King branding, AI goal creation, and deep analytics.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
