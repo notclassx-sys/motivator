@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Home, Sparkles, LayoutList, PieChart, UserRound } from 'lucide-react';
 import { ViewType } from '../types';
@@ -10,10 +9,10 @@ interface BottomNavProps {
 
 export const BottomNav: React.FC<BottomNavProps> = ({ activeView, setActiveView }) => {
   const items = [
-    { id: 'home', label: 'HOME', icon: Home },
-    { id: 'plan-maker', label: 'AI COACH', icon: Sparkles },
-    { id: 'planner', label: 'PLANNER', icon: LayoutList },
-    { id: 'analytics', label: 'INSIGHTS', icon: PieChart },
+    { id: 'home', label: 'DASHBOARD', icon: Home },
+    { id: 'plan-maker', label: 'PLAN MAKER', icon: Sparkles },
+    { id: 'planner', label: 'TASKS', icon: LayoutList },
+    { id: 'analytics', label: 'STATS', icon: PieChart },
     { id: 'profile', label: 'PROFILE', icon: UserRound },
   ];
 

@@ -1,8 +1,6 @@
-
-import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, Trash2, CheckCircle, Sparkles } from 'lucide-react';
-import { Planner, ChatMessage } from '../types';
-import { chatForTasks } from '../geminiService';
+import React, { useState, useEffect } from 'react';
+import { Plus, Target, Clock, Zap, LayoutList, ChevronRight, CheckCircle } from 'lucide-react';
+import { Planner, Priority } from '../types';
 
 interface PlanMakerProps {
   planners: Planner[];
@@ -11,15 +9,12 @@ interface PlanMakerProps {
 }
 
 export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAddPlanner }) => {
-  const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    const saved = localStorage.getItem('motivator_chat_history');
-    return saved ? JSON.parse(saved) : [{ role: 'model', text: "Hi! I'm your AI Assistant. Let's build your plan." }];
-  });
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [suggestedTasks, setSuggestedTasks] = useState<any[]>([]);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [priority, setPriority] = useState<Priority>(Priority.MEDIUM);
+  const [timeSlot, setTimeSlot] = useState('');
   const [selectedPlannerId, setSelectedPlannerId] = useState(planners[0]?.id || '');
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     if (!selectedPlannerId && planners.length > 0) {
@@ -27,133 +22,151 @@ export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAd
     }
   }, [planners]);
 
-  useEffect(() => {
-    localStorage.setItem('motivator_chat_history', JSON.stringify(messages));
-    if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages, isLoading, suggestedTasks]);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
-
-    const userMsg = input;
-    setInput('');
-    const newMessages: ChatMessage[] = [...messages, { role: 'user', text: userMsg }];
-    setMessages(newMessages);
-    setIsLoading(true);
-
-    try {
-      const result = await chatForTasks(userMsg, messages);
-      setMessages(prev => [...prev, { role: 'model', text: result.reply || "I've drafted a plan for you." }]);
-      if (result.suggestedTasks && result.suggestedTasks.length > 0) {
-        setSuggestedTasks(result.suggestedTasks);
-      }
-    } catch (error) {
-      setMessages(prev => [...prev, { role: 'model', text: "I'm having trouble connecting to the AI system. Please try again in a moment." }]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const addToPlanner = () => {
     let targetId = selectedPlannerId;
     if (!targetId && planners.length === 0) {
-      targetId = onAddPlanner('My Plan', '📅', '#3B82F6');
+      targetId = onAddPlanner('MISSION PLAN', '📅', '#3B82F6');
     } else if (!targetId && planners.length > 0) {
       targetId = planners[0].id;
     }
-    suggestedTasks.forEach(task => onAddTasks(targetId, task));
-    setSuggestedTasks([]);
-    setMessages(prev => [...prev, { role: 'model', text: "Perfect! Your tasks are now in your planner." }]);
+
+    onAddTasks(targetId, {
+      title,
+      description,
+      priority,
+      timeSlot: timeSlot || 'ASAP'
+    });
+
+    // Reset form
+    setTitle('');
+    setDescription('');
+    setTimeSlot('');
+    setPriority(Priority.MEDIUM);
+    
+    // Show success haptic-style feedback
+    setSuccess(true);
+    setTimeout(() => setSuccess(false), 2000);
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-6.5rem)]">
-      <header className="flex justify-between items-center mb-6 px-1">
-        <div>
-          <h1 className="text-2xl font-bold text-white flex items-center">
-            <Bot size={20} className="mr-3 text-[#3B82F6]" /> AI Assistant
-          </h1>
-          <p className="text-[10px] text-[#A1A1AA] font-bold uppercase tracking-widest mt-1 ml-8">System Online</p>
-        </div>
-        <button 
-          onClick={() => { if(confirm('Clear history?')) { setMessages([{ role: 'model', text: "Chat history cleared." }]); setSuggestedTasks([]); localStorage.removeItem('motivator_chat_history'); }}}
-          className="p-2.5 bg-white/5 rounded-xl text-zinc-600 hover:text-rose-500 transition-all"
-        >
-          <Trash2 size={16} />
-        </button>
+    <div className="space-y-8 animate-in fade-in duration-700 pb-20">
+      <header className="px-1">
+        <h1 className="text-4xl font-black text-white tracking-tighter uppercase italic">Plan Maker</h1>
+        <p className="text-[#52525B] text-[10px] font-black uppercase tracking-[0.4em] mt-2">Manual Protocol Entry</p>
       </header>
 
-      <div className="flex-1 overflow-y-auto no-scrollbar space-y-5 pb-40 px-1">
-        {messages.map((m, i) => (
-          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] p-4 rounded-2xl text-[14px] leading-relaxed shadow-sm ${
-              m.role === 'user' 
-                ? 'bg-[#3B82F6] text-white rounded-tr-none' 
-                : 'bg-[#1C1C1E] text-white border border-white/5 rounded-tl-none'
-            }`}>
-              {m.text}
-            </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Task Title Input */}
+        <div className="bg-[#1C1C1E] rounded-[2.5rem] p-8 border border-white/5 shadow-2xl relative overflow-hidden group">
+          <div className="flex items-center space-x-3 mb-6">
+            <Zap size={16} className="text-[#3B82F6]" />
+            <label className="text-[10px] font-black text-[#3B82F6] uppercase tracking-[0.4em]">Objective Title</label>
           </div>
-        ))}
-        
-        {isLoading && (
-          <div className="flex justify-start">
-            <div className="bg-[#1C1C1E] p-3 rounded-xl flex space-x-1.5 animate-pulse">
-              <div className="w-1.5 h-1.5 bg-[#3B82F6] rounded-full" />
-              <div className="w-1.5 h-1.5 bg-[#3B82F6] rounded-full" />
-              <div className="w-1.5 h-1.5 bg-[#3B82F6] rounded-full" />
-            </div>
-          </div>
-        )}
-
-        {suggestedTasks.length > 0 && (
-          <div className="bg-[#1C1C1E] rounded-3xl p-6 shadow-2xl space-y-4 border border-white/5 animate-in zoom-in-95">
-            <div className="flex items-center space-x-2">
-              <Sparkles size={16} className="text-[#3B82F6]" />
-              <h4 className="text-[11px] font-bold text-white uppercase tracking-widest">Suggested Plan</h4>
-            </div>
-            <div className="space-y-2">
-              {suggestedTasks.map((t, i) => (
-                <div key={i} className="flex justify-between items-center p-3.5 bg-black/30 rounded-2xl border border-white/5">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-bold text-white truncate">{t.title}</p>
-                    <p className="text-[10px] text-zinc-500 mt-0.5">{t.timeSlot || 'Today'}</p>
-                  </div>
-                  <CheckCircle size={16} className="text-[#3B82F6] ml-3" />
-                </div>
-              ))}
-            </div>
-            <button 
-              onClick={addToPlanner}
-              className="w-full bg-[#3B82F6] text-white py-4 rounded-2xl font-bold text-[11px] transition-all shadow-xl active:scale-95 uppercase tracking-widest"
-            >
-              Add to Tasks
-            </button>
-          </div>
-        )}
-        <div ref={scrollRef} />
-      </div>
-
-      <div className="fixed bottom-[75px] left-6 right-6 max-w-md mx-auto z-[120]">
-        <div className="relative group">
           <input
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyPress={e => e.key === 'Enter' && handleSend()}
-            placeholder="Type your goal here..."
-            className="w-full bg-[#1C1C1E] border border-white/10 text-white placeholder:text-zinc-700 rounded-full px-6 py-4 text-[15px] focus:border-[#3B82F6] outline-none transition-all shadow-2xl"
+            autoFocus
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="E.G. DEPLOY PRODUCTION CODE"
+            className="w-full bg-transparent border-b border-white/10 py-4 text-xl font-black text-white placeholder:text-zinc-800 focus:outline-none focus:border-[#3B82F6] transition-all uppercase italic tracking-tight"
           />
-          <button 
-            onClick={handleSend}
-            disabled={!input.trim() || isLoading}
-            className={`absolute right-1.5 top-1.5 p-2.5 rounded-full transition-all ${
-              input.trim() ? 'bg-[#3B82F6] text-white' : 'text-zinc-800'
-            }`}
-          >
-            <Send size={18} />
-          </button>
+        </div>
+
+        {/* Tactical Parameters */}
+        <div className="grid grid-cols-2 gap-5">
+          <div className="bg-[#1C1C1E] rounded-[2.5rem] p-7 border border-white/5 shadow-xl">
+            <div className="flex items-center space-x-3 mb-4">
+              <Clock size={14} className="text-[#C5A059]" />
+              <label className="text-[9px] font-black text-[#C5A059] uppercase tracking-widest">Time Slot</label>
+            </div>
+            <input
+              type="text"
+              value={timeSlot}
+              onChange={(e) => setTimeSlot(e.target.value)}
+              placeholder="09:00 AM"
+              className="w-full bg-black/20 border border-white/5 rounded-xl px-4 py-3 text-xs font-bold text-white placeholder:text-zinc-700 focus:outline-none focus:border-[#C5A059] transition-all"
+            />
+          </div>
+
+          <div className="bg-[#1C1C1E] rounded-[2.5rem] p-7 border border-white/5 shadow-xl">
+            <div className="flex items-center space-x-3 mb-4">
+              <Target size={14} className="text-[#3B82F6]" />
+              <label className="text-[9px] font-black text-[#3B82F6] uppercase tracking-widest">Priority</label>
+            </div>
+            <select
+              value={priority}
+              onChange={(e) => setPriority(e.target.value as Priority)}
+              className="w-full bg-black/20 border border-white/5 rounded-xl px-4 py-3 text-xs font-bold text-white focus:outline-none focus:border-[#3B82F6] appearance-none"
+            >
+              <option value={Priority.LOW}>LOW</option>
+              <option value={Priority.MEDIUM}>MEDIUM</option>
+              <option value={Priority.HIGH}>HIGH</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Planner Selection */}
+        <div className="bg-[#1C1C1E] rounded-[2.5rem] p-8 border border-white/5 shadow-xl">
+          <div className="flex items-center space-x-3 mb-6">
+            <LayoutList size={16} className="text-[#52525B]" />
+            <label className="text-[10px] font-black text-[#52525B] uppercase tracking-[0.4em]">Select Matrix</label>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {planners.length === 0 ? (
+              <p className="text-[10px] text-zinc-700 font-bold uppercase tracking-widest py-2 italic">No planners available. A default will be created.</p>
+            ) : (
+              planners.map(p => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setSelectedPlannerId(p.id)}
+                  className={`px-5 py-3 rounded-2xl border text-[10px] font-black transition-all uppercase tracking-widest ${
+                    selectedPlannerId === p.id 
+                      ? 'bg-[#3B82F6] border-[#3B82F6] text-white shadow-[0_5px_15px_rgba(59,130,246,0.3)]' 
+                      : 'bg-black/20 border-white/5 text-zinc-500'
+                  }`}
+                >
+                  {p.icon} {p.name}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Action Button */}
+        <button
+          type="submit"
+          disabled={!title.trim()}
+          className={`w-full py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.5em] transition-all flex items-center justify-center space-x-4 shadow-2xl active:scale-95 disabled:opacity-30 ${
+            success ? 'bg-[#84BD00] text-white' : 'bg-[#3B82F6] text-white'
+          }`}
+        >
+          {success ? (
+            <>
+              <CheckCircle size={20} />
+              <span>LOGGED SUCCESSFULLY</span>
+            </>
+          ) : (
+            <>
+              <Plus size={20} strokeWidth={3} />
+              <span>COMMIT TO PLANNER</span>
+            </>
+          )}
+        </button>
+      </form>
+
+      {/* Footer Info */}
+      <div className="px-4 py-8 border-t border-white/5 mt-10">
+        <div className="flex items-center justify-between text-[#52525B]">
+          <span className="text-[8px] font-black uppercase tracking-[0.3em]">Protocol v2.0 Manual</span>
+          <div className="flex space-x-1">
+             <div className="w-1 h-1 rounded-full bg-zinc-800" />
+             <div className="w-1 h-1 rounded-full bg-zinc-800" />
+             <div className="w-1 h-1 rounded-full bg-zinc-800" />
+          </div>
         </div>
       </div>
     </div>
