@@ -13,7 +13,7 @@ interface PlanMakerProps {
 export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAddPlanner }) => {
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     const saved = localStorage.getItem('motivator_chat_history');
-    return saved ? JSON.parse(saved) : [{ role: 'model', text: "Hi! I'm your AI Assistant. How can I help you plan your day today?" }];
+    return saved ? JSON.parse(saved) : [{ role: 'model', text: "Hi! I'm your AI Assistant. Tell me what you'd like to achieve today." }];
   });
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -45,12 +45,12 @@ export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAd
 
     try {
       const result = await chatForTasks(userMsg, messages);
-      setMessages(prev => [...prev, { role: 'model', text: result.reply || "I've generated a suggested plan for you." }]);
+      setMessages(prev => [...prev, { role: 'model', text: result.reply || "I've drafted a plan for you." }]);
       if (result.suggestedTasks && result.suggestedTasks.length > 0) {
         setSuggestedTasks(result.suggestedTasks);
       }
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'model', text: "Sorry, I'm having trouble connecting. Try again?" }]);
+      setMessages(prev => [...prev, { role: 'model', text: "I'm having trouble connecting. Check your API key." }]);
     } finally {
       setIsLoading(false);
     }
@@ -65,17 +65,17 @@ export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAd
     }
     suggestedTasks.forEach(task => onAddTasks(targetId, task));
     setSuggestedTasks([]);
-    setMessages(prev => [...prev, { role: 'model', text: "Done! I've added those tasks to your planner." }]);
+    setMessages(prev => [...prev, { role: 'model', text: "Perfect! Your tasks are now in your planner." }]);
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-7rem)]">
+    <div className="flex flex-col h-[calc(100vh-6.5rem)]">
       <header className="flex justify-between items-center mb-6 px-1">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center">
-            <Bot size={20} className="mr-2.5 text-[#3B82F6]" /> AI Assistant
+            <Bot size={20} className="mr-3 text-[#3B82F6]" /> AI Assistant
           </h1>
-          <p className="text-[10px] text-[#A1A1AA] font-bold uppercase tracking-widest mt-1 ml-8">Plan your day</p>
+          <p className="text-[10px] text-[#A1A1AA] font-bold uppercase tracking-widest mt-1 ml-8">Simple planning helper</p>
         </div>
         <button 
           onClick={() => { if(confirm('Clear history?')) { setMessages([{ role: 'model', text: "Chat history cleared." }]); setSuggestedTasks([]); localStorage.removeItem('motivator_chat_history'); }}}
@@ -112,7 +112,7 @@ export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAd
           <div className="bg-[#1C1C1E] rounded-3xl p-6 shadow-2xl space-y-4 border border-white/5 animate-in zoom-in-95">
             <div className="flex items-center space-x-2">
               <Sparkles size={16} className="text-[#3B82F6]" />
-              <h4 className="text-[11px] font-bold text-white uppercase tracking-widest">New Suggestions</h4>
+              <h4 className="text-[11px] font-bold text-white uppercase tracking-widest">Suggested Plan</h4>
             </div>
             <div className="space-y-2">
               {suggestedTasks.map((t, i) => (
@@ -129,21 +129,21 @@ export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAd
               onClick={addToPlanner}
               className="w-full bg-[#3B82F6] text-white py-4 rounded-2xl font-bold text-[11px] transition-all shadow-xl active:scale-95 uppercase tracking-widest"
             >
-              Save to Tasks
+              Add to Tasks
             </button>
           </div>
         )}
         <div ref={scrollRef} />
       </div>
 
-      {/* Clean, standard chat bar positioned above nav */}
-      <div className="fixed bottom-[80px] left-6 right-6 max-w-md mx-auto z-[120]">
-        <div className="relative">
+      {/* Standard, clean chat input pinned above nav */}
+      <div className="fixed bottom-[75px] left-6 right-6 max-w-md mx-auto z-[120]">
+        <div className="relative group">
           <input
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyPress={e => e.key === 'Enter' && handleSend()}
-            placeholder="How can I help you plan?"
+            placeholder="Plan something today..."
             className="w-full bg-[#1C1C1E] border border-white/10 text-white placeholder:text-zinc-700 rounded-full px-6 py-4 text-[15px] focus:border-[#3B82F6] outline-none transition-all shadow-2xl"
           />
           <button 
