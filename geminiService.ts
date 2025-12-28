@@ -1,17 +1,16 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { Priority } from "./types";
 
 const MODEL_NAME = 'gemini-3-flash-preview';
 
 /**
- * Initializes the AI client.
- * MANDATORY: Uses process.env.API_KEY as per system requirements.
+ * Initializes the AI client using the mandatory process.env.API_KEY.
  */
 const getClient = () => {
   const apiKey = process.env.API_KEY;
   if (!apiKey || apiKey === 'undefined') {
-    // If you see this error, you MUST redeploy your project on Vercel after adding the key.
-    throw new Error("API_KEY_NOT_FOUND_IN_ENV");
+    throw new Error("API_KEY_NOT_FOUND");
   }
   return new GoogleGenAI({ apiKey });
 };
@@ -19,13 +18,13 @@ const getClient = () => {
 export const generateQuote = async (seenQuotes: string[] = []) => {
   try {
     const ai = getClient();
-    const excludeList = seenQuotes.length > 0 ? `\n\nExclude these: ${seenQuotes.join(', ')}` : "";
+    const excludeList = seenQuotes.length > 0 ? `\n\nExclude these specifically: ${seenQuotes.join(', ')}` : "";
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
-      contents: `Provide one high-impact, elite motivational quote (max 12 words).${excludeList}`,
-      config: { temperature: 1.0 }
+      contents: `Provide one powerful, elite motivational quote for a high-performer (max 12 words).${excludeList}`,
+      config: { temperature: 0.9 }
     });
-    return response.text?.trim() || "The world is won by those who show up.";
+    return response.text?.trim() || "The king does not look back.";
   } catch (error) {
     console.error("AI Quote Error:", error);
     return "Focus on the step in front of you.";
@@ -47,16 +46,16 @@ export const chatForTasks = async (userInput: string, chatHistory: { role: 'user
       model: MODEL_NAME,
       contents: contents,
       config: {
-        systemInstruction: `You are the ultimate performance coach. 
-        Break goals into high-impact tasks. 
+        systemInstruction: `You are the ultimate elite performance coach. 
+        Analyze the user's goal and break it down into high-impact, tactical tasks.
         
         Return JSON format ONLY:
         {
-          "reply": "Concise coach-like response.",
+          "reply": "A concise, motivating response from a world-class mentor.",
           "suggestedTasks": [
             {
-              "title": "Clear action",
-              "description": "Brief detail",
+              "title": "Clear action-oriented task",
+              "description": "High-level detail",
               "priority": "HIGH",
               "timeSlot": "e.g. 09:00 AM"
             }
@@ -89,10 +88,12 @@ export const chatForTasks = async (userInput: string, chatHistory: { role: 'user
     return JSON.parse(response.text || '{}');
   } catch (error: any) {
     console.error("AI Assistant Error:", error);
-    const msg = error.message === "API_KEY_NOT_FOUND_IN_ENV" 
-      ? "Deployment Error: API_KEY is missing. Add 'API_KEY' to Vercel and REDEPLOY." 
-      : "Connection interrupted. Check your API key status.";
-    return { reply: msg, suggestedTasks: [] };
+    return { 
+      reply: error.message === "API_KEY_NOT_FOUND" 
+        ? "System Alert: API_KEY is missing in your environment settings. Please add it to Vercel." 
+        : "I'm temporarily offline. Check your network or API key status.", 
+      suggestedTasks: [] 
+    };
   }
 };
 
@@ -101,10 +102,10 @@ export const analyzeProductivity = async (completed: number, total: number) => {
     const ai = getClient();
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
-      contents: `User finished ${completed}/${total} tasks. One elite productivity tip (max 8 words).`,
+      contents: `The user finished ${completed}/${total} tasks. Provide one elite strategy for increasing focus tomorrow (max 10 words).`,
     });
-    return response.text?.trim() || "Win the morning, win the day.";
+    return response.text?.trim() || "Consolidate your efforts on a single priority.";
   } catch (error) {
-    return "Prioritize your most difficult task first.";
+    return "Optimize your workflow for maximum output.";
   }
 };
