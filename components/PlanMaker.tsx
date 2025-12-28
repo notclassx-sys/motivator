@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Zap, Bot, Trash2, CheckCircle, Clock } from 'lucide-react';
+import { Send, Bot, Trash2, CheckCircle } from 'lucide-react';
 import { Planner, ChatMessage } from '../types';
 import { chatForTasks } from '../geminiService';
 
@@ -10,26 +10,10 @@ interface PlanMakerProps {
   onAddPlanner: (name: string, icon: string, color: string) => any;
 }
 
-const PreviewHeader: React.FC<{ label: string; color: string }> = ({ label, color }) => (
-  <div className="relative flex-1">
-    <div 
-      className="py-2.5 text-center text-[7px] font-black text-white uppercase tracking-widest"
-      style={{ backgroundColor: color }}
-    >
-      {label}
-    </div>
-    <div className="absolute left-0 right-0 -bottom-1 z-20 flex justify-center pointer-events-none">
-      <svg width="100%" height="4" preserveAspectRatio="none" viewBox="0 0 100 10">
-        <path d="M0 0 L50 10 L100 0 Z" fill={color} />
-      </svg>
-    </div>
-  </div>
-);
-
 export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAddPlanner }) => {
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     const saved = localStorage.getItem('motivator_chat_history');
-    return saved ? JSON.parse(saved) : [{ role: 'model', text: "Strategic Link: Online. How shall we dominate the day?" }];
+    return saved ? JSON.parse(saved) : [{ role: 'model', text: "Hi! How can I help you plan your day today?" }];
   });
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -61,12 +45,12 @@ export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAd
 
     try {
       const result = await chatForTasks(userMsg, messages);
-      setMessages(prev => [...prev, { role: 'model', text: result.reply || "Strategy parameters updated." }]);
+      setMessages(prev => [...prev, { role: 'model', text: result.reply || "I've updated your suggestions." }]);
       if (result.suggestedTasks && result.suggestedTasks.length > 0) {
         setSuggestedTasks(result.suggestedTasks);
       }
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'model', text: "Brief delay in neural processing. Awaiting re-sync..." }]);
+      setMessages(prev => [...prev, { role: 'model', text: "Sorry, I had a connection error. Try again?" }]);
     } finally {
       setIsLoading(false);
     }
@@ -75,40 +59,39 @@ export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAd
   const addToPlanner = () => {
     let targetId = selectedPlannerId;
     if (!targetId && planners.length === 0) {
-      targetId = onAddPlanner('MISSION OPS', '🎯', '#3B82F6');
+      targetId = onAddPlanner('My Tasks', '📅', '#3B82F6');
     } else if (!targetId && planners.length > 0) {
       targetId = planners[0].id;
     }
     suggestedTasks.forEach(task => onAddTasks(targetId, task));
     setSuggestedTasks([]);
-    setMessages(prev => [...prev, { role: 'model', text: "Sector objectives initialized." }]);
+    setMessages(prev => [...prev, { role: 'model', text: "Tasks saved to your plan!" }]);
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-10rem)]">
+    <div className="flex flex-col h-[calc(100vh-8rem)]">
       <header className="flex justify-between items-center mb-6 px-1">
         <div>
-          <h1 className="text-2xl font-black text-[#E5E5E5] tracking-tighter uppercase italic flex items-center">
-            <Bot size={22} className="mr-3 text-[#3B82F6]" /> Strategist
+          <h1 className="text-2xl font-black text-[#E5E5E5] flex items-center">
+            <Bot size={22} className="mr-3 text-[#3B82F6]" /> AI Helper
           </h1>
-          <p className="text-[8px] text-[#A1A1AA] font-black uppercase tracking-[0.4em] mt-1 ml-9">Prime Intelligence</p>
+          <p className="text-[9px] text-[#A1A1AA] font-bold uppercase tracking-widest mt-1 ml-9">Ask me anything</p>
         </div>
         <button 
-          onClick={() => { if(confirm('Purge history?')) { setMessages([{ role: 'model', text: "Log cleared." }]); setSuggestedTasks([]); localStorage.removeItem('motivator_chat_history'); }}}
-          className="p-3 glass rounded-xl text-zinc-700 hover:text-rose-500 transition-colors"
+          onClick={() => { if(confirm('Clear chat history?')) { setMessages([{ role: 'model', text: "Chat cleared." }]); setSuggestedTasks([]); localStorage.removeItem('motivator_chat_history'); }}}
+          className="p-3 glass rounded-xl text-zinc-600 hover:text-rose-500 transition-colors"
         >
           <Trash2 size={16} />
         </button>
       </header>
 
-      {/* Message List - Refined padding for visibility above input */}
-      <div className="flex-1 overflow-y-auto no-scrollbar space-y-6 pb-48 px-1">
+      <div className="flex-1 overflow-y-auto no-scrollbar space-y-6 pb-40 px-1">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] p-4 rounded-[1.25rem] text-[10px] font-black tracking-widest leading-relaxed uppercase animate-in fade-in slide-in-from-bottom-2 shadow-xl border border-white/5 ${
+            <div className={`max-w-[85%] p-4 rounded-2xl text-[12px] font-medium leading-relaxed shadow-lg ${
               m.role === 'user' 
-                ? 'bg-[#3B82F6] text-white rounded-tr-none border-[#3B82F6]' 
-                : 'glass text-[#A1A1AA] rounded-tl-none italic'
+                ? 'bg-[#3B82F6] text-white rounded-tr-none' 
+                : 'bg-[#1C1C1E] text-[#E5E5E5] border border-white/5 rounded-tl-none'
             }`}>
               {m.text}
             </div>
@@ -117,7 +100,7 @@ export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAd
         
         {isLoading && (
           <div className="flex justify-start">
-            <div className="glass p-3 rounded-xl flex space-x-1.5 animate-pulse">
+            <div className="bg-[#1C1C1E] p-3 rounded-xl flex space-x-1.5 animate-pulse">
               <div className="w-1.5 h-1.5 bg-[#3B82F6] rounded-full" />
               <div className="w-1.5 h-1.5 bg-[#3B82F6] rounded-full" />
               <div className="w-1.5 h-1.5 bg-[#3B82F6] rounded-full" />
@@ -126,59 +109,48 @@ export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAd
         )}
 
         {suggestedTasks.length > 0 && (
-          <div className="glass rounded-[1.5rem] p-5 animate-in zoom-in-95 duration-500 shadow-2xl space-y-5 border-[#3B82F6]/20 mb-4">
-            <div className="flex items-center justify-between">
-              <h4 className="text-[9px] font-black text-[#E5E5E5] uppercase tracking-[0.4em]">Target Preview</h4>
-              <Zap size={14} className="text-[#3B82F6] animate-pulse" />
-            </div>
-            
-            <div className="space-y-px rounded-xl overflow-hidden border border-white/5">
-              <div className="flex space-x-px">
-                <PreviewHeader label="Task" color="#00A3E0" />
-                <PreviewHeader label="Time" color="#FFB81C" />
-                <div className="w-[40px] bg-[#84BD00] py-2.5 text-center text-[7px] font-black text-white uppercase tracking-widest">CMD</div>
-              </div>
-
+          <div className="bg-[#1C1C1E] rounded-2xl p-5 shadow-2xl space-y-4 border border-[#3B82F6]/20">
+            <h4 className="text-[10px] font-black text-[#E5E5E5] uppercase tracking-widest">New Suggestions</h4>
+            <div className="space-y-2">
               {suggestedTasks.map((t, i) => (
-                <div key={i} className="flex space-x-px">
-                  <div className="flex-1 bg-black/40 p-3 text-[9px] font-black text-[#E5E5E5] uppercase truncate">{t.title}</div>
-                  <div className="w-[70px] bg-black/40 p-3 text-[8px] font-black text-[#FFB81C] text-center uppercase whitespace-nowrap">{t.timeSlot}</div>
-                  <div className="w-[40px] bg-black/40 p-3 flex items-center justify-center">
-                    <CheckCircle size={14} className="text-[#84BD00]" />
+                <div key={i} className="flex justify-between items-center p-3 bg-black/40 rounded-xl">
+                  <div>
+                    <p className="text-[11px] font-bold text-white">{t.title}</p>
+                    <p className="text-[9px] text-[#A1A1AA]">{t.timeSlot || 'Today'}</p>
                   </div>
+                  <CheckCircle size={14} className="text-[#3B82F6]" />
                 </div>
               ))}
             </div>
-
             <button 
               onClick={addToPlanner}
-              className="w-full bg-[#3B82F6] text-white py-4 rounded-xl font-black text-[10px] active:scale-[0.98] transition-all uppercase tracking-widest shadow-xl"
+              className="w-full bg-[#3B82F6] text-white py-3.5 rounded-xl font-bold text-[11px] transition-all shadow-lg"
             >
-              LAUNCH MISSION
+              Add to My Plan
             </button>
           </div>
         )}
         <div ref={scrollRef} />
       </div>
 
-      {/* CHAT INPUT CONTAINER - Positioned to stay visible above the thinner menu bar */}
-      <div className="fixed bottom-[82px] left-5 right-5 max-w-md mx-auto z-[120] animate-in slide-in-from-bottom-4 duration-500">
-        <div className="relative group">
+      {/* Normal chat bar, visible above the menu */}
+      <div className="fixed bottom-[75px] left-5 right-5 max-w-md mx-auto z-[120]">
+        <div className="relative shadow-2xl">
           <input
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyPress={e => e.key === 'Enter' && handleSend()}
-            placeholder="TRANSMIT PARAMETERS..."
-            className="w-full bg-[#111113]/98 backdrop-blur-3xl border border-white/10 text-[#E5E5E5] placeholder:text-zinc-800 rounded-[1.5rem] pl-6 pr-14 py-4.5 text-[10px] font-black transition-all uppercase tracking-[0.2em] shadow-[0_20px_50px_rgba(0,0,0,0.7)] focus:border-[#3B82F6]/50 focus:outline-none"
+            placeholder="Type here..."
+            className="w-full bg-[#1C1C1E] border border-white/10 text-white placeholder:text-zinc-600 rounded-2xl pl-5 pr-14 py-4 text-[13px] focus:border-[#3B82F6] outline-none transition-all"
           />
           <button 
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
-            className={`absolute right-2 top-2 p-3 rounded-[1.1rem] transition-all ${
-              input.trim() ? 'bg-[#3B82F6] text-white shadow-lg scale-100' : 'bg-transparent text-zinc-800 scale-90'
+            className={`absolute right-1.5 top-1.5 p-2.5 rounded-xl transition-all ${
+              input.trim() ? 'bg-[#3B82F6] text-white' : 'text-zinc-700'
             }`}
           >
-            <Send size={16} strokeWidth={3} />
+            <Send size={18} />
           </button>
         </div>
       </div>

@@ -2,64 +2,27 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Priority } from "./types";
 
-/**
- * CASCADING NEURAL LINK SYSTEM
- * Strictly uses the 3 provided high-capacity keys.
- * Rotates automatically on quota limits.
- */
-const MASTER_KEYS = [
-  'AIzaSyC5TElJE6A5pCCBud0dq5cJQ-mgY_M0FVk', // Alpha Link
-  'AIzaSyBmLUKYQseNL3rsYXiWCwFPKXHmqgz-tJc', // Beta Link
-  'AIzaSyBplBN5DvPw0u7Qj0hy4v6n9sPnT9wWMaI'  // Gamma Link
-];
-
-let activeKeyIndex = 0;
-
-/**
- * Executes AI operations with silent failover logic.
- * The user never sees a "Quota Exceeded" message unless all 3 keys are exhausted.
- */
-async function executeWithFailover<T>(operation: (ai: any) => Promise<T>): Promise<T> {
-  const attemptLimit = MASTER_KEYS.length;
-  let lastError: any;
-
-  for (let i = 0; i < attemptLimit; i++) {
-    const currentKey = MASTER_KEYS[activeKeyIndex];
-    const ai = new GoogleGenAI({ apiKey: currentKey });
-    
-    try {
-      return await operation(ai);
-    } catch (error: any) {
-      lastError = error;
-      const errorMsg = error.message?.toLowerCase() || "";
-      
-      // Rotate on rate limits or quota exhaustion
-      if (errorMsg.includes('429') || errorMsg.includes('quota')) {
-        activeKeyIndex = (activeKeyIndex + 1) % MASTER_KEYS.length;
-        continue;
-      }
-      
-      throw error;
-    }
-  }
-  
-  throw lastError || new Error("Neural Infrastructure Saturated.");
-}
+// Always initialize with process.env.API_KEY as per system requirements.
+const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const generateQuote = async (seenQuotes: string[] = []) => {
-  return executeWithFailover(async (ai) => {
+  try {
+    const ai = getAI();
     const excludeList = seenQuotes.length > 0 ? `\n\nAvoid these: ${seenQuotes.join(', ')}` : "";
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Give me 1 short, high-impact motivational quote (max 10 words). Include quote and author. Be unique.${excludeList}`,
-      config: { temperature: 0.9 }
+      contents: `Give me 1 short, very simple motivational quote (max 10 words). Include quote and author. Be unique and positive.${excludeList}`,
+      config: { temperature: 0.8 }
     });
-    return response.text?.trim() || "The best way to predict the future is to create it.";
-  }).catch(() => "Action is the foundational key to all success.");
+    return response.text?.trim() || "Small steps lead to big changes.";
+  } catch (error) {
+    return "The best way to get started is to quit talking and begin doing.";
+  }
 };
 
 export const chatForTasks = async (userInput: string, chatHistory: { role: 'user' | 'model', text: string }[]) => {
-  return executeWithFailover(async (ai) => {
+  try {
+    const ai = getAI();
     const contents = [
       ...chatHistory.map(m => ({
         role: m.role,
@@ -72,15 +35,16 @@ export const chatForTasks = async (userInput: string, chatHistory: { role: 'user
       model: 'gemini-3-flash-preview',
       contents: contents,
       config: {
-        systemInstruction: `You are a high-performance strategic coach. 
+        systemInstruction: `You are a helpful daily assistant. 
         
-        RESPONSE PROTOCOL:
-        1. 'reply': Exactly ONE punchy sentence (max 10 words).
-        2. 'suggestedTasks': Mandatory JSON array of mission targets.
-           - title: 2-3 words, uppercase.
-           - description: 10 words max.
+        RULES:
+        1. 'reply': One simple, friendly sentence.
+        2. 'suggestedTasks': A list of tasks if the user asked to plan something.
+           - title: Simple name (e.g., "DRINK WATER").
+           - description: Short description.
            - priority: LOW, MEDIUM, or HIGH.
-        3. No raw text output outside JSON.`,
+           - timeSlot: Simple time like "9:00 AM".
+        3. Only return JSON.`,
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.OBJECT,
@@ -105,16 +69,21 @@ export const chatForTasks = async (userInput: string, chatHistory: { role: 'user
     });
 
     const cleanJson = response.text?.replace(/```json|```/g, "").trim();
-    return JSON.parse(cleanJson || '{"reply": "Parameters received.", "suggestedTasks": []}');
-  }).catch(() => ({ reply: "Neural link re-stabilizing. Input received.", suggestedTasks: [] }));
+    return JSON.parse(cleanJson || '{"reply": "I understand. What else?", "suggestedTasks": []}');
+  } catch (error) {
+    return { reply: "I'm here to help. What's on your mind?", suggestedTasks: [] };
+  }
 };
 
 export const analyzeProductivity = async (completed: number, total: number) => {
-  return executeWithFailover(async (ai) => {
+  try {
+    const ai = getAI();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Status: ${completed}/${total} completed. 2 brief tactical insights (15 words total).`,
+      contents: `User has finished ${completed} out of ${total} tasks today. Give 2 very short, simple tips to stay productive (max 15 words).`,
     });
-    return response.text?.trim() || "Efficiency stable. Maintain current velocity.";
-  }).catch(() => "Tactical link offline. Mission priority: Execution.");
+    return response.text?.trim() || "Great job! Keep going one task at a time.";
+  } catch (error) {
+    return "Focus on your next task. You are doing well!";
+  }
 };

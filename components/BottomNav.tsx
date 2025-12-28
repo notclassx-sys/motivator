@@ -10,19 +10,16 @@ interface BottomNavProps {
 
 export const BottomNav: React.FC<BottomNavProps> = ({ activeView, setActiveView }) => {
   const items = [
-    { id: 'home', label: 'DASH', icon: Home },
+    { id: 'home', label: 'Home', icon: Home },
     { id: 'plan-maker', label: 'AI', icon: MessageSquare },
-    { id: 'planner', label: 'PLANS', icon: Calendar },
-    { id: 'analytics', label: 'STATS', icon: BarChart2 },
-    { id: 'profile', label: 'USER', icon: User },
+    { id: 'planner', label: 'Plans', icon: Calendar },
+    { id: 'analytics', label: 'Stats', icon: BarChart2 },
+    { id: 'profile', label: 'Me', icon: User },
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 px-6 pb-4 pt-1 bg-gradient-to-t from-[#0A0A0B] via-[#0A0A0B]/80 to-transparent z-[150] pointer-events-none">
-      <nav className="max-w-md mx-auto bg-[#1C1C1E]/90 backdrop-blur-[24px] border border-white/5 px-1 py-1 flex justify-around items-center shadow-[0_20px_50px_rgba(0,0,0,0.9)] rounded-full pointer-events-auto relative">
-        {/* Fine Inner Boundary */}
-        <div className="absolute inset-0 rounded-full border border-white/5 pointer-events-none" />
-        
+    <div className="fixed bottom-0 left-0 right-0 px-6 pb-2.5 pt-1 bg-gradient-to-t from-[#0A0A0B] to-transparent z-[150] pointer-events-none">
+      <nav className="max-w-md mx-auto bg-[#1C1C1E]/95 backdrop-blur-xl border border-white/5 px-1 py-1 flex justify-around items-center shadow-2xl rounded-full pointer-events-auto">
         {items.map((item) => {
           const Icon = item.icon;
           const isActive = activeView === item.id;
@@ -30,27 +27,18 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeView, setActiveView 
             <button
               key={item.id}
               onClick={() => setActiveView(item.id as ViewType)}
-              className={`relative flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all duration-500 flex-1 group ${
-                isActive ? 'text-[#3B82F6]' : 'text-[#A1A1AA] hover:text-[#E5E5E5]'
+              className={`relative flex flex-col items-center justify-center py-1.5 flex-1 transition-all duration-300 ${
+                isActive ? 'text-[#3B82F6]' : 'text-[#A1A1AA]'
               }`}
             >
-              <div className={`relative p-1.5 rounded-xl transition-all duration-300 ${
-                isActive 
-                  ? 'bg-[#3B82F6]/10' 
-                  : 'group-hover:bg-white/5'
-              }`}>
+              <div className={`p-1.5 rounded-xl transition-all ${isActive ? 'bg-[#3B82F6]/10' : ''}`}>
                 <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
               </div>
-
-              <span className={`text-[5px] mt-0.5 font-black uppercase tracking-[0.3em] transition-all duration-300 ${
-                isActive ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'
-              }`}>
+              <span className="text-[7px] font-bold uppercase tracking-widest mt-0.5">
                 {item.label}
               </span>
-
-              {/* Minimal Indicator */}
               {isActive && (
-                <div className="absolute -bottom-0.5 w-1 h-1 bg-[#3B82F6] rounded-full shadow-[0_0_8px_#3B82F6]" />
+                <div className="absolute -bottom-1 w-1 h-1 bg-[#3B82F6] rounded-full" />
               )}
             </button>
           );
