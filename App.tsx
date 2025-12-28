@@ -17,8 +17,18 @@ const App: React.FC = () => {
   const [planners, setPlanners] = useState<Planner[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [hasKey, setHasKey] = useState(true);
 
   useEffect(() => {
+    // Check if key selection is required
+    const checkKey = async () => {
+      if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
+        const selected = await window.aistudio.hasSelectedApiKey();
+        setHasKey(selected);
+      }
+    };
+    checkKey();
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
     });
@@ -55,7 +65,7 @@ const App: React.FC = () => {
           setPlanners([]);
         }
       } catch (err) {
-        console.error("Failed to load operational data:", err);
+        console.error("Data load error:", err);
       } finally {
         setLoading(false);
       }
@@ -79,7 +89,7 @@ const App: React.FC = () => {
         .from('planners')
         .upsert(dataToSync, { onConflict: 'id' });
       
-      if (error) console.error('Cloud Sync Failure:', error);
+      if (error) console.error('Sync error:', error);
       setTimeout(() => setSyncing(false), 800);
     }
   }, [session]);
@@ -146,7 +156,7 @@ const App: React.FC = () => {
         .from('planners')
         .delete()
         .eq('id', id);
-      if (error) console.error('Cloud Deletion Failure:', error);
+      if (error) console.error('Deletion error:', error);
       setTimeout(() => setSyncing(false), 800);
     }
   };
@@ -164,12 +174,35 @@ const App: React.FC = () => {
     return newPlanner.id;
   };
 
+  const handleOpenKey = async () => {
+    if (window.aistudio && window.aistudio.openSelectKey) {
+      await window.aistudio.openSelectKey();
+      setHasKey(true);
+    }
+  };
+
   if (loading) return (
-    <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#121212]">
-      <Logo size={120} className="mb-8" />
-      <div className="text-[#E5E5E5] font-black tracking-[0.4em] text-[10px] animate-pulse uppercase">Syncing Nexus...</div>
+    <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#0A0A0B]">
+      <Logo size={100} className="mb-6" />
+      <div className="text-[#E5E5E5] font-bold text-xs animate-pulse tracking-widest uppercase">Loading...</div>
     </div>
   );
+
+  if (!hasKey) {
+    return (
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#0A0A0B] px-8 text-center">
+        <Logo size={80} className="mb-8" />
+        <h2 className="text-xl font-bold mb-4">API Access Required</h2>
+        <p className="text-sm text-zinc-500 mb-8">Please select an API key to enable AI features.</p>
+        <button 
+          onClick={handleOpenKey}
+          className="bg-[#3B82F6] text-white px-8 py-4 rounded-2xl font-bold text-sm uppercase tracking-widest"
+        >
+          Select API Key
+        </button>
+      </div>
+    );
+  }
 
   if (!session) return <Auth />;
 
@@ -187,10 +220,10 @@ const App: React.FC = () => {
   return (
     <Layout activeView={activeView} setActiveView={setActiveView}>
       {syncing && (
-        <div className="fixed top-8 right-8 z-[100] animate-in slide-in-from-right-4 fade-in duration-300">
-          <div className="bg-[#1C1C1E] border border-[#3B82F6]/30 px-4 py-2 rounded-xl flex items-center space-x-2 shadow-2xl backdrop-blur-md">
+        <div className="fixed top-8 right-8 z-[100] animate-in slide-in-from-right-2 fade-in">
+          <div className="bg-[#1C1C1E] border border-white/5 px-4 py-2 rounded-xl flex items-center space-x-2 shadow-2xl">
             <div className="w-1.5 h-1.5 bg-[#3B82F6] rounded-full animate-ping" />
-            <span className="text-[8px] font-black text-[#3B82F6] uppercase tracking-widest">Saving</span>
+            <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest">Saving</span>
           </div>
         </div>
       )}

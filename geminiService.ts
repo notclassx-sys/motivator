@@ -2,23 +2,29 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Priority } from "./types";
 
-// Using a stable model name to avoid 403 Forbidden issues with preview models
-const MODEL_NAME = 'gemini-flash-latest';
+// Standard model for basic text tasks as per guidelines
+const MODEL_NAME = 'gemini-3-flash-preview';
 
-const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
+const getAI = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("API Key is missing. Please select a key.");
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 export const generateQuote = async (seenQuotes: string[] = []) => {
   try {
     const ai = getAI();
-    const excludeList = seenQuotes.length > 0 ? `\n\nAvoid these: ${seenQuotes.join(', ')}` : "";
+    const excludeList = seenQuotes.length > 0 ? `\n\nDon't use these: ${seenQuotes.join(', ')}` : "";
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
-      contents: `Give me 1 short, very simple motivational quote (max 10 words). Include quote and author. Be unique and positive.${excludeList}`,
-      config: { temperature: 0.8 }
+      contents: `Write one very short motivational quote (under 10 words). Make it simple and inspiring.${excludeList}`,
+      config: { temperature: 0.7 }
     });
-    return response.text?.trim() || "Small steps lead to big changes.";
+    return response.text?.trim() || "Every small step counts towards your goal.";
   } catch (error) {
-    return "Believe in yourself and all that you are.";
+    return "You are capable of amazing things.";
   }
 };
 
@@ -37,13 +43,16 @@ export const chatForTasks = async (userInput: string, chatHistory: { role: 'user
       model: MODEL_NAME,
       contents: contents,
       config: {
-        systemInstruction: `You are a helpful daily planning assistant. 
-        If the user asks to plan something (like "complete 4 chapters"), suggest specific tasks with times.
+        systemInstruction: `You are a simple and helpful day planner. 
+        If a user wants to achieve a goal, break it down into easy tasks with times.
         
-        Return JSON with:
-        1. 'reply': A short, friendly confirmation.
-        2. 'suggestedTasks': An array of tasks (title, description, priority, timeSlot).
-        Priority must be LOW, MEDIUM, or HIGH.`,
+        Always return JSON:
+        {
+          "reply": "A short friendly message",
+          "suggestedTasks": [
+            {"title": "Simple Task Name", "description": "Quick info", "priority": "HIGH/MEDIUM/LOW", "timeSlot": "9:00 AM"}
+          ]
+        }`,
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.OBJECT,
@@ -67,15 +76,13 @@ export const chatForTasks = async (userInput: string, chatHistory: { role: 'user
       }
     });
 
-    // Directly use .text property as per guidelines
-    const resultText = response.text || '{}';
-    return JSON.parse(resultText);
+    return JSON.parse(response.text || '{"reply": "I heard you. How else can I help?", "suggestedTasks": []}');
   } catch (error) {
-    console.error("Gemini Error:", error);
-    return { 
-      reply: "I'm having a bit of trouble connecting to my brain. Can you try saying that again?", 
-      suggestedTasks: [] 
-    };
+    console.error("AI Error:", error);
+    if (error.message?.includes("API Key")) {
+      return { reply: "API Key error. Please check your settings.", suggestedTasks: [] };
+    }
+    return { reply: "I'm having a little trouble connecting. Please try again.", suggestedTasks: [] };
   }
 };
 
@@ -84,10 +91,10 @@ export const analyzeProductivity = async (completed: number, total: number) => {
     const ai = getAI();
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
-      contents: `The user finished ${completed} out of ${total} tasks. Give 1 tiny tip to stay focused (max 10 words).`,
+      contents: `The user finished ${completed} out of ${total} tasks today. Give one tiny tip to keep going (10 words max).`,
     });
-    return response.text?.trim() || "Take a 5-minute break and then start the next task.";
+    return response.text?.trim() || "You're doing great. Take it one task at a time.";
   } catch (error) {
-    return "Keep moving forward, one step at a time.";
+    return "Keep moving forward, you've got this!";
   }
 };
