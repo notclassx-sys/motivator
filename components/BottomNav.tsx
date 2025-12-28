@@ -18,8 +18,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeView, setActiveView 
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 px-6 pb-2 pt-1 bg-gradient-to-t from-[#0A0A0B] to-transparent z-[150] pointer-events-none">
-      <nav className="max-w-md mx-auto bg-[#1C1C1E]/95 backdrop-blur-2xl border border-white/5 px-1 py-0.5 flex justify-around items-center shadow-2xl rounded-full pointer-events-auto">
+    <div className="fixed bottom-0 left-0 right-0 px-8 pb-3 pt-1 bg-gradient-to-t from-[#0A0A0B] to-transparent z-[150] pointer-events-none">
+      <nav className="max-w-md mx-auto bg-[#1C1C1E]/95 backdrop-blur-xl border border-white/5 px-1 py-0.5 flex justify-around items-center shadow-2xl rounded-full pointer-events-auto">
         {items.map((item) => {
           const Icon = item.icon;
           const isActive = activeView === item.id;
@@ -31,8 +31,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeView, setActiveView 
                 isActive ? 'text-[#3B82F6]' : 'text-[#A1A1AA]'
               }`}
             >
-              <div className={`p-1.5 rounded-lg transition-all ${isActive ? 'bg-[#3B82F6]/10' : ''}`}>
-                <Icon size={16} strokeWidth={isActive ? 2.5 : 2} />
+              <div className={`p-1 rounded-lg transition-all ${isActive ? 'bg-[#3B82F6]/10' : ''}`}>
+                <Icon size={14} strokeWidth={isActive ? 2.5 : 2} />
               </div>
               <span className="text-[6px] font-black uppercase tracking-[0.2em] mt-0.5 scale-90">
                 {item.label}
