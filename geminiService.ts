@@ -5,42 +5,16 @@ import { Priority } from "./types";
 const MODEL_NAME = 'gemini-3-flash-preview';
 
 /**
- * Safely retrieves the API key from the environment.
+ * The Google GenAI SDK is initialized directly with the environment variable.
+ * We assume process.env.API_KEY is pre-configured and valid.
  */
-const getApiKey = () => {
-  try {
-    const key = typeof process !== 'undefined' ? process.env.API_KEY : undefined;
-    if (!key || key === 'undefined' || key === '') return null;
-    return key;
-  } catch {
-    return null;
-  }
-};
-
-/**
- * Ensures a key is available or prompts the user.
- */
-const ensureAiReady = async (): Promise<GoogleGenAI | null> => {
-  let apiKey = getApiKey();
-  
-  if (!apiKey) {
-    if (window.aistudio && typeof window.aistudio.openSelectKey === 'function') {
-      console.warn("AI Service: API Key missing. Opening selector...");
-      await window.aistudio.openSelectKey();
-      // After opening, we assume success as per instructions
-      apiKey = getApiKey(); 
-    }
-  }
-
-  if (!apiKey) return null;
-  return new GoogleGenAI({ apiKey });
+const getAI = () => {
+  return new GoogleGenAI({ apiKey: process.env.API_KEY! });
 };
 
 export const generateQuote = async (seenQuotes: string[] = []) => {
   try {
-    const ai = await ensureAiReady();
-    if (!ai) return "Success is built one step at a time.";
-
+    const ai = getAI();
     const excludeList = seenQuotes.length > 0 ? `\n\nExclude: ${seenQuotes.join(', ')}` : "";
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
@@ -56,12 +30,7 @@ export const generateQuote = async (seenQuotes: string[] = []) => {
 
 export const chatForTasks = async (userInput: string, chatHistory: { role: 'user' | 'model', text: string }[]) => {
   try {
-    const ai = await ensureAiReady();
-    if (!ai) return { 
-      reply: "AI key not detected. Please tap the AI status icon in your profile to configure it.", 
-      suggestedTasks: [] 
-    };
-
+    const ai = getAI();
     const contents = [
       ...chatHistory.map(m => ({
         role: m.role,
@@ -118,7 +87,7 @@ export const chatForTasks = async (userInput: string, chatHistory: { role: 'user
   } catch (error) {
     console.error("AI Assistant Error:", error);
     return { 
-      reply: "The AI is currently unavailable. Please check your network or API key status.", 
+      reply: "I encountered an error processing your request. Please try again.", 
       suggestedTasks: [] 
     };
   }
@@ -126,9 +95,7 @@ export const chatForTasks = async (userInput: string, chatHistory: { role: 'user
 
 export const analyzeProductivity = async (completed: number, total: number) => {
   try {
-    const ai = await ensureAiReady();
-    if (!ai) return "Consistency is the key to mastery.";
-
+    const ai = getAI();
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
       contents: `The user completed ${completed} out of ${total} tasks today. Give one simple tip for focus (max 10 words).`,

@@ -1,32 +1,14 @@
 
-import React, { useState, useEffect } from 'react';
-import { User, Power, Cpu, ShieldCheck, Activity, Settings2, Sparkles, AlertCircle } from 'lucide-react';
+import React from 'react';
+import { User, Power, ShieldCheck, Activity, Sparkles } from 'lucide-react';
 import { signOut } from '../supabase';
 
 interface ProfileProps { user?: any; }
 
 export const Profile: React.FC<ProfileProps> = ({ user }) => {
-  const [hasApiKey, setHasApiKey] = useState(true);
-
-  useEffect(() => {
-    const checkKey = () => {
-      const key = typeof process !== 'undefined' ? process.env.API_KEY : undefined;
-      setHasApiKey(!!key && key !== 'undefined' && key !== '');
-    };
-    checkKey();
-    const interval = setInterval(checkKey, 2000);
-    return () => clearInterval(interval);
-  }, []);
-
   const handleSignOut = async () => {
     if (confirm('LOG OUT OF YOUR SESSION?')) {
       await signOut();
-    }
-  };
-
-  const handleConfigAi = async () => {
-    if (window.aistudio && typeof window.aistudio.openSelectKey === 'function') {
-      await window.aistudio.openSelectKey();
     }
   };
 
@@ -54,39 +36,12 @@ export const Profile: React.FC<ProfileProps> = ({ user }) => {
         <p className="text-[10px] text-[#A1A1AA] font-black uppercase tracking-[0.4em] mt-3">{userEmail}</p>
       </header>
 
-      {/* AI STATUS CARD */}
-      <div className="px-4">
-        <div className={`p-6 rounded-[2rem] border transition-all duration-500 ${hasApiKey ? 'bg-[#1C1C1E] border-white/5' : 'bg-rose-500/10 border-rose-500/20 animate-pulse'}`}>
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-4">
-              <div className={`p-3 rounded-2xl ${hasApiKey ? 'bg-black/40 text-[#3B82F6]' : 'bg-rose-500 text-white'}`}>
-                {hasApiKey ? <Cpu size={20} /> : <AlertCircle size={20} />}
-              </div>
-              <div>
-                <p className="text-[10px] font-black text-white uppercase tracking-widest">AI Core Status</p>
-                <p className={`text-[9px] font-bold uppercase mt-1 ${hasApiKey ? 'text-green-500' : 'text-rose-500'}`}>
-                  {hasApiKey ? 'Online & Linked' : 'Key Required'}
-                </p>
-              </div>
-            </div>
-            <button 
-              onClick={handleConfigAi}
-              className={`px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all ${
-                hasApiKey ? 'bg-white/5 text-[#A1A1AA] hover:bg-white/10' : 'bg-[#3B82F6] text-white shadow-lg'
-              }`}
-            >
-              {hasApiKey ? 'Update Key' : 'Configure'}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-3">
+      <div className="space-y-3 px-1">
         <h3 className="text-[10px] font-black text-zinc-700 uppercase tracking-[0.4em] px-4 mb-3">System Parameters</h3>
         
         {[
           { icon: ShieldCheck, label: 'Identity Protection', sub: 'Biometric Secure' },
-          { icon: Sparkles, label: 'Intelligence Level', sub: 'Gemini 3 Pro Ready' },
+          { icon: Sparkles, label: 'Intelligence Level', sub: 'Gemini 3 Flash' },
           { icon: Activity, label: 'Operational Health', sub: 'Optimal Performance' },
         ].map((item, i) => (
           <div 
@@ -114,7 +69,7 @@ export const Profile: React.FC<ProfileProps> = ({ user }) => {
       </button>
 
       <div className="text-center py-10 opacity-10">
-        <p className="text-[8px] text-[#A1A1AA] font-black uppercase tracking-[1em]">Nexus v4.5 Build-7</p>
+        <p className="text-[8px] text-[#A1A1AA] font-black uppercase tracking-[1em]">Nexus v4.5 Build-8</p>
       </div>
     </div>
   );
