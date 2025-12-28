@@ -3,7 +3,8 @@ import { GoogleGenAI } from "@google/genai";
 const MODEL_NAME = 'gemini-3-flash-preview';
 
 /**
- * Connects to the AI using your secret key.
+ * AI client is still available for other tasks if needed, 
+ * but quote generation is now local as requested.
  */
 const getClient = () => {
   const apiKey = process.env.API_KEY;
@@ -13,20 +14,8 @@ const getClient = () => {
   return new GoogleGenAI({ apiKey });
 };
 
-export const generateQuote = async (seenQuotes: string[] = []) => {
-  try {
-    const ai = getClient();
-    const response = await ai.models.generateContent({
-      model: MODEL_NAME,
-      contents: "Write a short, friendly, and very encouraging motivational quote for a person trying to stay productive. Use simple words. Maximum 10 words.",
-      config: { temperature: 0.9 }
-    });
-    return response.text?.trim() || "You are doing a great job!";
-  } catch (error) {
-    console.error("AI Quote Error:", error);
-    return "Keep going, you've got this!";
-  }
-};
+// Quotes are now handled locally in the UI
+export const generateQuote = async (seenQuotes: string[] = []) => "";
 
 // Kept simple for manual mode
 export const chatForTasks = async (userInput: string, chatHistory: any[]) => ({ reply: "", suggestedTasks: [] });
