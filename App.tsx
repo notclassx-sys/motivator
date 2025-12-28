@@ -10,6 +10,7 @@ import { Auth } from './components/Auth';
 import { Logo } from './components/Logo';
 import { ViewType, Planner, Task, Priority } from './types';
 import { supabase } from './supabase';
+import { GoogleGenAI } from "@google/genai";
 
 const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
@@ -17,17 +18,19 @@ const App: React.FC = () => {
   const [planners, setPlanners] = useState<Planner[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const [hasKey, setHasKey] = useState(true);
+  const [needsApiKey, setNeedsApiKey] = useState(false);
 
   useEffect(() => {
-    // Check if key selection is required
-    const checkKey = async () => {
+    const checkApiKey = async () => {
+      // Check if we have an API key or need to prompt for one
       if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
-        const selected = await window.aistudio.hasSelectedApiKey();
-        setHasKey(selected);
+        const hasKey = await window.aistudio.hasSelectedApiKey();
+        if (!hasKey) {
+          setNeedsApiKey(true);
+        }
       }
     };
-    checkKey();
+    checkApiKey();
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -54,15 +57,13 @@ const App: React.FC = () => {
 
       setLoading(true);
       try {
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from('planners')
           .select('*')
           .eq('user_id', session.user.id);
 
         if (data && data.length > 0) {
           setPlanners(data);
-        } else {
-          setPlanners([]);
         }
       } catch (err) {
         console.error("Data load error:", err);
@@ -85,11 +86,7 @@ const App: React.FC = () => {
         user_id: session.user.id
       }));
 
-      const { error } = await supabase
-        .from('planners')
-        .upsert(dataToSync, { onConflict: 'id' });
-      
-      if (error) console.error('Sync error:', error);
+      await supabase.from('planners').upsert(dataToSync, { onConflict: 'id' });
       setTimeout(() => setSyncing(false), 800);
     }
   }, [session]);
@@ -148,16 +145,8 @@ const App: React.FC = () => {
   const deletePlanner = async (id: string) => {
     const updated = planners.filter(p => p.id !== id);
     setPlanners(updated);
-    localStorage.setItem('motivator_planners', JSON.stringify(updated));
-
     if (session) {
-      setSyncing(true);
-      const { error } = await supabase
-        .from('planners')
-        .delete()
-        .eq('id', id);
-      if (error) console.error('Deletion error:', error);
-      setTimeout(() => setSyncing(false), 800);
+      await supabase.from('planners').delete().eq('id', id);
     }
   };
 
@@ -169,40 +158,47 @@ const App: React.FC = () => {
       color,
       tasks: []
     };
-    const updated = [...planners, newPlanner];
-    savePlanners(updated);
+    savePlanners([...planners, newPlanner]);
     return newPlanner.id;
   };
 
-  const handleOpenKey = async () => {
-    if (window.aistudio && window.aistudio.openSelectKey) {
+  const handleSelectApiKey = async () => {
+    if (window.aistudio && typeof window.aistudio.openSelectKey === 'function') {
       await window.aistudio.openSelectKey();
-      setHasKey(true);
+      setNeedsApiKey(false);
     }
   };
 
   if (loading) return (
     <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#0A0A0B]">
-      <Logo size={100} className="mb-6" />
-      <div className="text-[#E5E5E5] font-bold text-xs animate-pulse tracking-widest uppercase">Loading...</div>
+      <Logo size={80} className="mb-6 animate-pulse" />
+      <div className="text-[#E5E5E5] font-bold text-[10px] tracking-[0.3em] uppercase opacity-50">Initializing</div>
     </div>
   );
 
-  if (!hasKey) {
-    return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#0A0A0B] px-8 text-center">
-        <Logo size={80} className="mb-8" />
-        <h2 className="text-xl font-bold mb-4">API Access Required</h2>
-        <p className="text-sm text-zinc-500 mb-8">Please select an API key to enable AI features.</p>
-        <button 
-          onClick={handleOpenKey}
-          className="bg-[#3B82F6] text-white px-8 py-4 rounded-2xl font-bold text-sm uppercase tracking-widest"
-        >
-          Select API Key
-        </button>
-      </div>
-    );
-  }
+  if (needsApiKey) return (
+    <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#0A0A0B] px-10 text-center">
+      <Logo size={60} className="mb-8" />
+      <h2 className="text-xl font-bold text-white mb-4">Setup Required</h2>
+      <p className="text-sm text-zinc-500 mb-8 leading-relaxed">
+        To use the AI Assistant features, please select a valid Google Gemini API Key.
+      </p>
+      <button 
+        onClick={handleSelectApiKey}
+        className="w-full bg-[#3B82F6] text-white py-4 rounded-2xl font-bold text-sm uppercase tracking-widest shadow-xl"
+      >
+        Select API Key
+      </button>
+      <a 
+        href="https://ai.google.dev/gemini-api/docs/billing" 
+        target="_blank" 
+        rel="noreferrer"
+        className="mt-6 text-[10px] text-zinc-600 underline uppercase tracking-widest"
+      >
+        Billing Documentation
+      </a>
+    </div>
+  );
 
   if (!session) return <Auth />;
 
@@ -220,9 +216,9 @@ const App: React.FC = () => {
   return (
     <Layout activeView={activeView} setActiveView={setActiveView}>
       {syncing && (
-        <div className="fixed top-8 right-8 z-[100] animate-in slide-in-from-right-2 fade-in">
+        <div className="fixed top-12 right-6 z-[100] animate-in slide-in-from-right-4 fade-in">
           <div className="bg-[#1C1C1E] border border-white/5 px-4 py-2 rounded-xl flex items-center space-x-2 shadow-2xl">
-            <div className="w-1.5 h-1.5 bg-[#3B82F6] rounded-full animate-ping" />
+            <div className="w-1 h-1 bg-[#3B82F6] rounded-full animate-ping" />
             <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest">Saving</span>
           </div>
         </div>

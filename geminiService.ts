@@ -2,29 +2,30 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Priority } from "./types";
 
-// Standard model for basic text tasks as per guidelines
+// Standard model for basic text and reasoning tasks
 const MODEL_NAME = 'gemini-3-flash-preview';
 
+/**
+ * Initializes the Gemini API client.
+ * Strictly uses process.env.API_KEY as per system requirements.
+ */
 const getAI = () => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) {
-    throw new Error("API Key is missing. Please select a key.");
-  }
-  return new GoogleGenAI({ apiKey });
+  return new GoogleGenAI({ apiKey: process.env.API_KEY });
 };
 
 export const generateQuote = async (seenQuotes: string[] = []) => {
   try {
     const ai = getAI();
-    const excludeList = seenQuotes.length > 0 ? `\n\nDon't use these: ${seenQuotes.join(', ')}` : "";
+    const excludeList = seenQuotes.length > 0 ? `\n\nExclude these: ${seenQuotes.join(', ')}` : "";
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
-      contents: `Write one very short motivational quote (under 10 words). Make it simple and inspiring.${excludeList}`,
-      config: { temperature: 0.7 }
+      contents: `Provide one short, simple motivational quote (max 12 words).${excludeList}`,
+      config: { temperature: 0.8 }
     });
-    return response.text?.trim() || "Every small step counts towards your goal.";
+    return response.text?.trim() || "Small progress is still progress.";
   } catch (error) {
-    return "You are capable of amazing things.";
+    console.error("Quote Error:", error);
+    return "The best way to predict the future is to create it.";
   }
 };
 
@@ -43,14 +44,19 @@ export const chatForTasks = async (userInput: string, chatHistory: { role: 'user
       model: MODEL_NAME,
       contents: contents,
       config: {
-        systemInstruction: `You are a simple and helpful day planner. 
-        If a user wants to achieve a goal, break it down into easy tasks with times.
+        systemInstruction: `You are a helpful and simple daily assistant. 
+        When the user wants to accomplish a goal, break it into clear, simple steps.
         
-        Always return JSON:
+        Return JSON format ONLY:
         {
-          "reply": "A short friendly message",
+          "reply": "A brief, encouraging response.",
           "suggestedTasks": [
-            {"title": "Simple Task Name", "description": "Quick info", "priority": "HIGH/MEDIUM/LOW", "timeSlot": "9:00 AM"}
+            {
+              "title": "Clear task name",
+              "description": "Short detail",
+              "priority": "HIGH", "MEDIUM", or "LOW",
+              "timeSlot": "e.g. 10:00 AM"
+            }
           ]
         }`,
         responseMimeType: 'application/json',
@@ -76,13 +82,13 @@ export const chatForTasks = async (userInput: string, chatHistory: { role: 'user
       }
     });
 
-    return JSON.parse(response.text || '{"reply": "I heard you. How else can I help?", "suggestedTasks": []}');
+    return JSON.parse(response.text || '{"reply": "I understand. How else can I help?", "suggestedTasks": []}');
   } catch (error) {
-    console.error("AI Error:", error);
-    if (error.message?.includes("API Key")) {
-      return { reply: "API Key error. Please check your settings.", suggestedTasks: [] };
-    }
-    return { reply: "I'm having a little trouble connecting. Please try again.", suggestedTasks: [] };
+    console.error("AI Assistant Error:", error);
+    return { 
+      reply: "I'm having a little trouble connecting right now. Can we try again in a moment?", 
+      suggestedTasks: [] 
+    };
   }
 };
 
@@ -91,10 +97,10 @@ export const analyzeProductivity = async (completed: number, total: number) => {
     const ai = getAI();
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
-      contents: `The user finished ${completed} out of ${total} tasks today. Give one tiny tip to keep going (10 words max).`,
+      contents: `The user completed ${completed} out of ${total} tasks today. Give one simple tip for better focus (max 12 words).`,
     });
-    return response.text?.trim() || "You're doing great. Take it one task at a time.";
+    return response.text?.trim() || "Stay hydrated and take short breaks between tasks.";
   } catch (error) {
-    return "Keep moving forward, you've got this!";
+    return "Focus on one thing at a time to stay productive.";
   }
 };
