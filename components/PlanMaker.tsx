@@ -45,7 +45,9 @@ export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAd
 
   useEffect(() => {
     localStorage.setItem('motivator_chat_history', JSON.stringify(messages));
-    scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (scrollRef.current) {
+      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages, isLoading, suggestedTasks]);
 
   const handleSend = async () => {
@@ -83,7 +85,7 @@ export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAd
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-12rem)]">
+    <div className="flex flex-col h-[calc(100vh-10rem)]">
       <header className="flex justify-between items-center mb-6 px-1">
         <div>
           <h1 className="text-2xl font-black text-[#E5E5E5] tracking-tighter uppercase italic flex items-center">
@@ -99,7 +101,8 @@ export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAd
         </button>
       </header>
 
-      <div className="flex-1 overflow-y-auto no-scrollbar space-y-5 pb-40 px-1">
+      {/* Message List - Increased Bottom Padding to avoid hiding under input */}
+      <div className="flex-1 overflow-y-auto no-scrollbar space-y-5 pb-52 px-1">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[85%] p-5 rounded-2xl text-[10px] font-black tracking-widest leading-relaxed uppercase animate-in fade-in slide-in-from-bottom-2 shadow-lg ${
@@ -178,23 +181,24 @@ export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAd
         <div ref={scrollRef} />
       </div>
 
-      <div className="fixed bottom-[100px] left-6 right-6 max-w-md mx-auto z-50">
+      {/* CHAT INPUT CONTAINER - Elevated with higher Z-INDEX to clear BottomNav */}
+      <div className="fixed bottom-[115px] left-5 right-5 max-w-md mx-auto z-[120] animate-in slide-in-from-bottom-4 duration-500">
         <div className="relative group">
           <input
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyPress={e => e.key === 'Enter' && handleSend()}
             placeholder="TRANSMIT PARAMETERS..."
-            className="w-full bg-[#111113]/90 backdrop-blur-2xl border border-white/10 text-[#E5E5E5] placeholder:text-zinc-800 rounded-2xl pl-7 pr-16 py-5 text-[10px] font-black transition-all uppercase tracking-[0.2em] shadow-2xl focus:border-[#3B82F6]/50 focus:outline-none"
+            className="w-full bg-[#111113]/95 backdrop-blur-3xl border border-white/10 text-[#E5E5E5] placeholder:text-zinc-800 rounded-3xl pl-8 pr-16 py-6 text-[11px] font-black transition-all uppercase tracking-[0.2em] shadow-[0_20px_50px_rgba(0,0,0,0.6)] focus:border-[#3B82F6]/50 focus:outline-none"
           />
           <button 
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
-            className={`absolute right-2 top-2 p-3.5 rounded-xl transition-all ${
+            className={`absolute right-3 top-3 p-4 rounded-2xl transition-all ${
               input.trim() ? 'bg-[#3B82F6] text-white shadow-lg scale-100' : 'bg-transparent text-zinc-800 scale-90'
             }`}
           >
-            <Send size={18} strokeWidth={3} />
+            <Send size={20} strokeWidth={3} />
           </button>
         </div>
       </div>
