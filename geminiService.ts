@@ -2,15 +2,19 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Priority } from "./types";
 
-// Standard model for basic text and reasoning tasks
-const MODEL_NAME = 'gemini-3-flash-preview';
+// Using the 'lite' model for better stability and compatibility
+const MODEL_NAME = 'gemini-flash-lite-latest';
 
 /**
- * Initializes the Gemini API client.
+ * Initializes the Gemini API client safely.
  * Strictly uses process.env.API_KEY as per system requirements.
  */
 const getAI = () => {
-  return new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const key = process.env.API_KEY;
+  if (!key || key === 'undefined') {
+    throw new Error("API Key not found in environment.");
+  }
+  return new GoogleGenAI({ apiKey: key });
 };
 
 export const generateQuote = async (seenQuotes: string[] = []) => {
@@ -19,13 +23,12 @@ export const generateQuote = async (seenQuotes: string[] = []) => {
     const excludeList = seenQuotes.length > 0 ? `\n\nExclude these: ${seenQuotes.join(', ')}` : "";
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
-      contents: `Provide one short, simple motivational quote (max 12 words).${excludeList}`,
-      config: { temperature: 0.8 }
+      contents: `Short motivational quote (max 10 words).${excludeList}`,
+      config: { temperature: 0.9 }
     });
     return response.text?.trim() || "Small progress is still progress.";
   } catch (error) {
-    console.error("Quote Error:", error);
-    return "The best way to predict the future is to create it.";
+    return "Focus on the step in front of you.";
   }
 };
 
@@ -44,19 +47,14 @@ export const chatForTasks = async (userInput: string, chatHistory: { role: 'user
       model: MODEL_NAME,
       contents: contents,
       config: {
-        systemInstruction: `You are a helpful and simple daily assistant. 
-        When the user wants to accomplish a goal, break it into clear, simple steps.
+        systemInstruction: `You are a helpful daily assistant. 
+        If the user wants to plan something, break it into simple tasks with times.
         
-        Return JSON format ONLY:
+        JSON ONLY:
         {
-          "reply": "A brief, encouraging response.",
+          "reply": "Friendly message",
           "suggestedTasks": [
-            {
-              "title": "Clear task name",
-              "description": "Short detail",
-              "priority": "HIGH", "MEDIUM", or "LOW",
-              "timeSlot": "e.g. 10:00 AM"
-            }
+            {"title": "Task", "description": "Short info", "priority": "HIGH", "timeSlot": "10:00 AM"}
           ]
         }`,
         responseMimeType: 'application/json',
@@ -84,11 +82,8 @@ export const chatForTasks = async (userInput: string, chatHistory: { role: 'user
 
     return JSON.parse(response.text || '{"reply": "I understand. How else can I help?", "suggestedTasks": []}');
   } catch (error) {
-    console.error("AI Assistant Error:", error);
-    return { 
-      reply: "I'm having a little trouble connecting right now. Can we try again in a moment?", 
-      suggestedTasks: [] 
-    };
+    console.error("AI Error:", error);
+    return { reply: "I'm having a connection issue. Can you try again?", suggestedTasks: [] };
   }
 };
 
@@ -97,10 +92,10 @@ export const analyzeProductivity = async (completed: number, total: number) => {
     const ai = getAI();
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
-      contents: `The user completed ${completed} out of ${total} tasks today. Give one simple tip for better focus (max 12 words).`,
+      contents: `The user finished ${completed}/${total} tasks. Give 1 tiny tip for focus (max 10 words).`,
     });
-    return response.text?.trim() || "Stay hydrated and take short breaks between tasks.";
+    return response.text?.trim() || "Keep taking small steps forward.";
   } catch (error) {
-    return "Focus on one thing at a time to stay productive.";
+    return "Stay focused on your next goal.";
   }
 };
