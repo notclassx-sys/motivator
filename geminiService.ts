@@ -2,45 +2,63 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Priority } from "./types";
 
-// Using the recommended stable model for text tasks
 const MODEL_NAME = 'gemini-3-flash-preview';
 
 /**
- * Helper to safely initialize the AI client.
- * If the key is missing, it returns null instead of throwing an SDK error.
+ * Safely retrieves the API key from the environment.
  */
-const getSafeAI = () => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey || apiKey === 'undefined' || apiKey === '') {
-    console.warn("AI Service: API Key is not configured in the environment.");
+const getApiKey = () => {
+  try {
+    const key = typeof process !== 'undefined' ? process.env.API_KEY : undefined;
+    if (!key || key === 'undefined' || key === '') return null;
+    return key;
+  } catch {
     return null;
   }
+};
+
+/**
+ * Ensures a key is available or prompts the user.
+ */
+const ensureAiReady = async (): Promise<GoogleGenAI | null> => {
+  let apiKey = getApiKey();
+  
+  if (!apiKey) {
+    if (window.aistudio && typeof window.aistudio.openSelectKey === 'function') {
+      console.warn("AI Service: API Key missing. Opening selector...");
+      await window.aistudio.openSelectKey();
+      // After opening, we assume success as per instructions
+      apiKey = getApiKey(); 
+    }
+  }
+
+  if (!apiKey) return null;
   return new GoogleGenAI({ apiKey });
 };
 
 export const generateQuote = async (seenQuotes: string[] = []) => {
   try {
-    const ai = getSafeAI();
-    if (!ai) return "Small steps lead to big results.";
+    const ai = await ensureAiReady();
+    if (!ai) return "Success is built one step at a time.";
 
     const excludeList = seenQuotes.length > 0 ? `\n\nExclude: ${seenQuotes.join(', ')}` : "";
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
-      contents: `Short motivational quote (max 10 words).${excludeList}`,
+      contents: `Provide one short, simple motivational quote (max 10 words).${excludeList}`,
       config: { temperature: 0.9 }
     });
-    return response.text?.trim() || "Progress is progress, no matter how small.";
+    return response.text?.trim() || "Small progress is still progress.";
   } catch (error) {
-    console.error("Quote Error:", error);
+    console.error("AI Quote Error:", error);
     return "Focus on the step in front of you.";
   }
 };
 
 export const chatForTasks = async (userInput: string, chatHistory: { role: 'user' | 'model', text: string }[]) => {
   try {
-    const ai = getSafeAI();
+    const ai = await ensureAiReady();
     if (!ai) return { 
-      reply: "I'm currently in offline mode (API key not found). Please ensure your environment is configured.", 
+      reply: "AI key not detected. Please tap the AI status icon in your profile to configure it.", 
       suggestedTasks: [] 
     };
 
@@ -95,12 +113,12 @@ export const chatForTasks = async (userInput: string, chatHistory: { role: 'user
       }
     });
 
-    const text = response.text || '{"reply": "I processed your request.", "suggestedTasks": []}';
+    const text = response.text || '{"reply": "Request processed.", "suggestedTasks": []}';
     return JSON.parse(text);
   } catch (error) {
     console.error("AI Assistant Error:", error);
     return { 
-      reply: "I'm having a little trouble connecting. Please try again later.", 
+      reply: "The AI is currently unavailable. Please check your network or API key status.", 
       suggestedTasks: [] 
     };
   }
@@ -108,15 +126,15 @@ export const chatForTasks = async (userInput: string, chatHistory: { role: 'user
 
 export const analyzeProductivity = async (completed: number, total: number) => {
   try {
-    const ai = getSafeAI();
-    if (!ai) return "Every completed task is a victory.";
+    const ai = await ensureAiReady();
+    if (!ai) return "Consistency is the key to mastery.";
 
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
       contents: `The user completed ${completed} out of ${total} tasks today. Give one simple tip for focus (max 10 words).`,
     });
-    return response.text?.trim() || "Consistency is the key to results.";
+    return response.text?.trim() || "Keep showing up every single day.";
   } catch (error) {
-    return "Focus on one thing at a time.";
+    return "Focus on one priority at a time.";
   }
 };
