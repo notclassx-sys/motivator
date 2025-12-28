@@ -101,11 +101,11 @@ export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAd
         </button>
       </header>
 
-      {/* Message List - Balanced padding to clear the chat box */}
-      <div className="flex-1 overflow-y-auto no-scrollbar space-y-6 pb-64 px-1">
+      {/* Message List - Refined padding for visibility above input */}
+      <div className="flex-1 overflow-y-auto no-scrollbar space-y-6 pb-48 px-1">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] p-5 rounded-[1.5rem] text-[10px] font-black tracking-widest leading-relaxed uppercase animate-in fade-in slide-in-from-bottom-2 shadow-xl border border-white/5 ${
+            <div className={`max-w-[85%] p-4 rounded-[1.25rem] text-[10px] font-black tracking-widest leading-relaxed uppercase animate-in fade-in slide-in-from-bottom-2 shadow-xl border border-white/5 ${
               m.role === 'user' 
                 ? 'bg-[#3B82F6] text-white rounded-tr-none border-[#3B82F6]' 
                 : 'glass text-[#A1A1AA] rounded-tl-none italic'
@@ -126,7 +126,7 @@ export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAd
         )}
 
         {suggestedTasks.length > 0 && (
-          <div className="glass rounded-[2rem] p-6 animate-in zoom-in-95 duration-500 shadow-2xl space-y-6 border-[#3B82F6]/20 mb-4">
+          <div className="glass rounded-[1.5rem] p-5 animate-in zoom-in-95 duration-500 shadow-2xl space-y-5 border-[#3B82F6]/20 mb-4">
             <div className="flex items-center justify-between">
               <h4 className="text-[9px] font-black text-[#E5E5E5] uppercase tracking-[0.4em]">Target Preview</h4>
               <Zap size={14} className="text-[#3B82F6] animate-pulse" />
@@ -141,9 +141,9 @@ export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAd
 
               {suggestedTasks.map((t, i) => (
                 <div key={i} className="flex space-x-px">
-                  <div className="flex-1 bg-black/40 p-4 text-[9px] font-black text-[#E5E5E5] uppercase truncate">{t.title}</div>
-                  <div className="w-[70px] bg-black/40 p-4 text-[8px] font-black text-[#FFB81C] text-center uppercase whitespace-nowrap">{t.timeSlot}</div>
-                  <div className="w-[40px] bg-black/40 p-4 flex items-center justify-center">
+                  <div className="flex-1 bg-black/40 p-3 text-[9px] font-black text-[#E5E5E5] uppercase truncate">{t.title}</div>
+                  <div className="w-[70px] bg-black/40 p-3 text-[8px] font-black text-[#FFB81C] text-center uppercase whitespace-nowrap">{t.timeSlot}</div>
+                  <div className="w-[40px] bg-black/40 p-3 flex items-center justify-center">
                     <CheckCircle size={14} className="text-[#84BD00]" />
                   </div>
                 </div>
@@ -152,33 +152,33 @@ export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAd
 
             <button 
               onClick={addToPlanner}
-              className="w-full bg-[#3B82F6] text-white py-5 rounded-2xl font-black text-[11px] active:scale-[0.98] transition-all uppercase tracking-widest shadow-xl"
+              className="w-full bg-[#3B82F6] text-white py-4 rounded-xl font-black text-[10px] active:scale-[0.98] transition-all uppercase tracking-widest shadow-xl"
             >
-              INITIALIZE MISSION
+              LAUNCH MISSION
             </button>
           </div>
         )}
         <div ref={scrollRef} />
       </div>
 
-      {/* CHAT INPUT CONTAINER - Positioned to clear the thinner BottomNav */}
-      <div className="fixed bottom-[95px] left-5 right-5 max-w-md mx-auto z-[120] animate-in slide-in-from-bottom-4 duration-500">
+      {/* CHAT INPUT CONTAINER - Positioned to stay visible above the thinner menu bar */}
+      <div className="fixed bottom-[82px] left-5 right-5 max-w-md mx-auto z-[120] animate-in slide-in-from-bottom-4 duration-500">
         <div className="relative group">
           <input
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyPress={e => e.key === 'Enter' && handleSend()}
             placeholder="TRANSMIT PARAMETERS..."
-            className="w-full bg-[#111113]/98 backdrop-blur-3xl border border-white/10 text-[#E5E5E5] placeholder:text-zinc-800 rounded-[2rem] pl-8 pr-16 py-5.5 text-[11px] font-black transition-all uppercase tracking-[0.2em] shadow-[0_25px_60px_rgba(0,0,0,0.8)] focus:border-[#3B82F6]/50 focus:outline-none"
+            className="w-full bg-[#111113]/98 backdrop-blur-3xl border border-white/10 text-[#E5E5E5] placeholder:text-zinc-800 rounded-[1.5rem] pl-6 pr-14 py-4.5 text-[10px] font-black transition-all uppercase tracking-[0.2em] shadow-[0_20px_50px_rgba(0,0,0,0.7)] focus:border-[#3B82F6]/50 focus:outline-none"
           />
           <button 
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
-            className={`absolute right-2.5 top-2.5 p-3.5 rounded-[1.25rem] transition-all ${
+            className={`absolute right-2 top-2 p-3 rounded-[1.1rem] transition-all ${
               input.trim() ? 'bg-[#3B82F6] text-white shadow-lg scale-100' : 'bg-transparent text-zinc-800 scale-90'
             }`}
           >
-            <Send size={18} strokeWidth={3} />
+            <Send size={16} strokeWidth={3} />
           </button>
         </div>
       </div>
