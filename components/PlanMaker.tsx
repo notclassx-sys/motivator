@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Target, Zap, Bot, Trash2, CheckCircle, Clock, ListChecks, ChevronDown, AlertTriangle, Key, ShieldAlert } from 'lucide-react';
+import { Send, Zap, Bot, Trash2, CheckCircle, Clock } from 'lucide-react';
 import { Planner, ChatMessage } from '../types';
 import { chatForTasks } from '../geminiService';
 
@@ -13,7 +13,7 @@ interface PlanMakerProps {
 const PreviewHeader: React.FC<{ label: string; color: string }> = ({ label, color }) => (
   <div className="relative flex-1">
     <div 
-      className="py-2 text-center text-[7px] font-black text-white uppercase tracking-widest"
+      className="py-2.5 text-center text-[7px] font-black text-white uppercase tracking-widest"
       style={{ backgroundColor: color }}
     >
       {label}
@@ -83,29 +83,29 @@ export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAd
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-10rem)]">
-      <header className="flex justify-between items-center mb-8 px-1">
+    <div className="flex flex-col h-[calc(100vh-12rem)]">
+      <header className="flex justify-between items-center mb-6 px-1">
         <div>
           <h1 className="text-2xl font-black text-[#E5E5E5] tracking-tighter uppercase italic flex items-center">
-            <Bot size={24} className="mr-3 text-[#3B82F6]" /> Strategist
+            <Bot size={22} className="mr-3 text-[#3B82F6]" /> Strategist
           </h1>
-          <p className="text-[9px] text-[#A1A1AA] font-black uppercase tracking-[0.4em] mt-1 ml-9">Prime Intelligence</p>
+          <p className="text-[8px] text-[#A1A1AA] font-black uppercase tracking-[0.4em] mt-1 ml-9">Prime Intelligence</p>
         </div>
         <button 
-          onClick={() => { if(confirm('Purge briefing history?')) { setMessages([{ role: 'model', text: "Tactical log cleared." }]); setSuggestedTasks([]); localStorage.removeItem('motivator_chat_history'); }}}
-          className="p-3 bg-[#1C1C1E] border border-white/5 rounded-2xl text-[#2C2C2E] hover:text-rose-500 transition-colors shadow-lg"
+          onClick={() => { if(confirm('Purge history?')) { setMessages([{ role: 'model', text: "Log cleared." }]); setSuggestedTasks([]); localStorage.removeItem('motivator_chat_history'); }}}
+          className="p-3 glass rounded-xl text-[#2C2C2E] hover:text-rose-500 transition-colors"
         >
-          <Trash2 size={18} />
+          <Trash2 size={16} />
         </button>
       </header>
 
-      <div className="flex-1 overflow-y-auto no-scrollbar space-y-6 pb-48 px-2">
+      <div className="flex-1 overflow-y-auto no-scrollbar space-y-5 pb-40 px-1">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] p-6 rounded-[2rem] text-[11px] font-black tracking-widest leading-relaxed uppercase animate-in fade-in slide-in-from-bottom-2 shadow-2xl ${
+            <div className={`max-w-[85%] p-5 rounded-2xl text-[10px] font-black tracking-widest leading-relaxed uppercase animate-in fade-in slide-in-from-bottom-2 shadow-lg ${
               m.role === 'user' 
                 ? 'bg-[#3B82F6] text-white rounded-tr-none' 
-                : 'bg-[#1C1C1E] border border-white/5 text-[#A1A1AA] rounded-tl-none italic'
+                : 'glass text-[#A1A1AA] rounded-tl-none italic'
             }`}>
               {m.text}
             </div>
@@ -114,56 +114,54 @@ export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAd
         
         {isLoading && (
           <div className="flex justify-start">
-            <div className="bg-[#1C1C1E] border border-white/5 p-4 rounded-2xl flex space-x-2 animate-pulse">
-              <div className="w-1.5 h-1.5 bg-[#3B82F6] rounded-full" />
-              <div className="w-1.5 h-1.5 bg-[#3B82F6] rounded-full" />
-              <div className="w-1.5 h-1.5 bg-[#3B82F6] rounded-full" />
+            <div className="glass p-3 rounded-xl flex space-x-1.5 animate-pulse">
+              <div className="w-1 h-1 bg-[#3B82F6] rounded-full" />
+              <div className="w-1 h-1 bg-[#3B82F6] rounded-full" />
+              <div className="w-1 h-1 bg-[#3B82F6] rounded-full" />
             </div>
           </div>
         )}
 
         {suggestedTasks.length > 0 && (
-          <div className="bg-[#1C1C1E] border border-[#3B82F6]/30 rounded-[3rem] p-8 animate-in zoom-in-95 duration-500 shadow-2xl space-y-8">
+          <div className="glass rounded-[2rem] p-6 animate-in zoom-in-95 duration-500 shadow-2xl space-y-6 border-[#3B82F6]/20">
             <div className="flex items-center justify-between">
-              <h4 className="text-[10px] font-black text-[#E5E5E5] uppercase tracking-[0.5em]">Target Preview</h4>
-              <Zap size={16} className="text-[#3B82F6] animate-pulse" />
+              <h4 className="text-[9px] font-black text-[#E5E5E5] uppercase tracking-[0.4em]">Target Preview</h4>
+              <Zap size={14} className="text-[#3B82F6] animate-pulse" />
             </div>
             
-            <div className="space-y-1 rounded-2xl overflow-hidden">
-              <div className="flex space-x-0.5">
-                <PreviewHeader label="Target" color="#00A3E0" />
-                <PreviewHeader label="Window" color="#FFB81C" />
-                <PreviewHeader label="Note" color="#00868F" />
-                <div className="w-[40px] bg-[#84BD00] py-2 text-center text-[7px] font-black text-white uppercase tracking-widest">CMD</div>
+            <div className="space-y-0.5 rounded-xl overflow-hidden border border-white/5">
+              <div className="flex space-x-px">
+                <PreviewHeader label="Task" color="#00A3E0" />
+                <PreviewHeader label="Time" color="#FFB81C" />
+                <div className="w-[40px] bg-[#84BD00] py-2.5 text-center text-[7px] font-black text-white uppercase tracking-widest">CMD</div>
               </div>
 
               {suggestedTasks.map((t, i) => (
-                <div key={i} className="flex space-x-0.5">
-                  <div className="flex-1 bg-[#121212] p-3 border border-white/5 text-[9px] font-black text-[#E5E5E5] uppercase truncate">{t.title}</div>
-                  <div className="w-[70px] bg-[#121212] p-3 border border-white/5 text-[8px] font-black text-[#FFB81C] text-center uppercase">{t.timeSlot}</div>
-                  <div className="flex-1 bg-[#121212] p-3 border border-white/5 text-[8px] text-[#A1A1AA] italic truncate">{t.description}</div>
-                  <div className="w-[40px] bg-[#121212] p-3 border border-white/5 flex items-center justify-center">
-                    <CheckCircle size={14} className="text-[#84BD00]/50" />
+                <div key={i} className="flex space-x-px">
+                  <div className="flex-1 bg-black/40 p-3 text-[8px] font-black text-[#E5E5E5] uppercase truncate">{t.title}</div>
+                  <div className="w-[70px] bg-black/40 p-3 text-[8px] font-black text-[#FFB81C] text-center uppercase whitespace-nowrap">{t.timeSlot}</div>
+                  <div className="w-[40px] bg-black/40 p-3 flex items-center justify-center">
+                    <CheckCircle size={12} className="text-[#84BD00]/30" />
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="space-y-4">
-              <label className="text-[9px] font-black text-[#A1A1AA] uppercase tracking-[0.5em] ml-2 block">Mission Sector</label>
-              <div className="flex overflow-x-auto no-scrollbar gap-3 pb-2">
+            <div className="space-y-3">
+              <label className="text-[8px] font-black text-[#A1A1AA] uppercase tracking-[0.4em] ml-2 block">Mission Sector</label>
+              <div className="flex overflow-x-auto no-scrollbar gap-2.5 pb-2">
                 {planners.map(p => (
                   <button
                     key={p.id}
                     onClick={() => setSelectedPlannerId(p.id)}
-                    className={`flex-shrink-0 px-6 py-4 rounded-2xl border transition-all flex items-center space-x-3 ${
+                    className={`flex-shrink-0 px-5 py-3.5 rounded-xl border transition-all flex items-center space-x-2.5 ${
                       selectedPlannerId === p.id 
-                        ? 'bg-[#3B82F6] border-[#3B82F6] text-white shadow-xl' 
-                        : 'bg-[#121212] border-white/5 text-[#A1A1AA]'
+                        ? 'bg-[#3B82F6] border-[#3B82F6] text-white shadow-lg' 
+                        : 'glass text-[#A1A1AA]'
                     }`}
                   >
-                    <span className="text-lg">{p.icon}</span>
-                    <span className="text-[9px] font-black uppercase tracking-widest">{p.name}</span>
+                    <span className="text-base">{p.icon}</span>
+                    <span className="text-[8px] font-black uppercase tracking-widest">{p.name}</span>
                   </button>
                 ))}
               </div>
@@ -171,33 +169,32 @@ export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAd
 
             <button 
               onClick={addToPlanner}
-              className="w-full bg-[#3B82F6] text-white py-6 rounded-[2rem] font-black text-[11px] active:scale-[0.98] transition-all uppercase tracking-widest shadow-2xl flex items-center justify-center"
+              className="w-full bg-[#3B82F6] text-white py-5 rounded-2xl font-black text-[10px] active:scale-[0.98] transition-all uppercase tracking-widest shadow-xl flex items-center justify-center"
             >
-              Initialize Directives
+              Launch Directives
             </button>
           </div>
         )}
         <div ref={scrollRef} />
       </div>
 
-      <div className="fixed bottom-[110px] left-8 right-8 max-w-md mx-auto pointer-events-none">
-        <div className="relative group pointer-events-auto">
-          <div className="absolute inset-0 bg-[#3B82F6]/10 blur-3xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
+      <div className="fixed bottom-[100px] left-6 right-6 max-w-md mx-auto z-50">
+        <div className="relative group">
           <input
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyPress={e => e.key === 'Enter' && handleSend()}
-            placeholder="TRANSMIT MISSION PARAMETERS..."
-            className="w-full bg-[#1C1C1E]/90 backdrop-blur-xl border border-white/10 text-[#E5E5E5] placeholder:text-[#2C2C2E] rounded-[2rem] pl-8 pr-16 py-6 text-[11px] font-black transition-all uppercase tracking-[0.2em] shadow-2xl relative z-10 focus:border-[#3B82F6]/60"
+            placeholder="TRANSMIT PARAMETERS..."
+            className="w-full bg-[#111113]/90 backdrop-blur-2xl border border-white/10 text-[#E5E5E5] placeholder:text-zinc-800 rounded-2xl pl-7 pr-16 py-5 text-[10px] font-black transition-all uppercase tracking-[0.2em] shadow-2xl focus:border-[#3B82F6]/50 focus:outline-none"
           />
           <button 
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
-            className={`absolute right-3 top-3 p-4 rounded-2xl transition-all z-20 ${
-              input.trim() ? 'bg-[#3B82F6] text-white active:scale-90 shadow-xl' : 'bg-[#121212] text-[#2C2C2E]'
+            className={`absolute right-2 top-2 p-3.5 rounded-xl transition-all ${
+              input.trim() ? 'bg-[#3B82F6] text-white shadow-lg scale-100' : 'bg-transparent text-zinc-800 scale-90'
             }`}
           >
-            <Send size={20} strokeWidth={3} />
+            <Send size={18} strokeWidth={3} />
           </button>
         </div>
       </div>
