@@ -17,31 +17,8 @@ const App: React.FC = () => {
   const [planners, setPlanners] = useState<Planner[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const [needsApiKey, setNeedsApiKey] = useState(false);
 
   useEffect(() => {
-    const checkApiKey = async () => {
-      // First check if an API key is already provided via environment
-      const envKey = process.env.API_KEY;
-      if (envKey && envKey !== 'undefined' && envKey !== '') {
-        setNeedsApiKey(false);
-        return;
-      }
-
-      // If not, check the aistudio interface
-      if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
-        const hasKey = await window.aistudio.hasSelectedApiKey();
-        if (!hasKey) {
-          setNeedsApiKey(true);
-        }
-      } else {
-        // Fallback for non-studio environments without a key
-        setNeedsApiKey(true);
-      }
-    };
-    
-    checkApiKey();
-
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
     });
@@ -172,42 +149,12 @@ const App: React.FC = () => {
     return newPlanner.id;
   };
 
-  const handleSelectApiKey = async () => {
-    if (window.aistudio && typeof window.aistudio.openSelectKey === 'function') {
-      await window.aistudio.openSelectKey();
-      // Assume success and proceed to the app
-      setNeedsApiKey(false);
-    }
-  };
-
   if (loading) return (
     <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#0A0A0B]">
       <Logo size={80} className="mb-6 animate-pulse" />
       <div className="text-[#E5E5E5] font-bold text-[10px] tracking-[0.3em] uppercase opacity-30">Starting System</div>
     </div>
   );
-
-  // Strictly block the app if an API key is required but missing from process.env
-  if (needsApiKey && (!process.env.API_KEY || process.env.API_KEY === 'undefined')) {
-    return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#0A0A0B] px-10 text-center">
-        <Logo size={60} className="mb-8" />
-        <h2 className="text-xl font-bold text-white mb-4">AI Key Required</h2>
-        <p className="text-sm text-zinc-500 mb-8 leading-relaxed">
-          Please select a Google Gemini API key from a paid GCP project to enable AI features.
-        </p>
-        <button 
-          onClick={handleSelectApiKey}
-          className="w-full bg-[#3B82F6] text-white py-4 rounded-2xl font-bold text-sm uppercase tracking-widest shadow-xl active:scale-95 transition-all"
-        >
-          Select API Key
-        </button>
-        <p className="mt-8 text-[9px] text-zinc-600 uppercase tracking-widest">
-          Required for <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noreferrer" className="underline text-[#3B82F6]">Billing Compliance</a>
-        </p>
-      </div>
-    );
-  }
 
   if (!session) return <Auth />;
 

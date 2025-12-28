@@ -2,51 +2,27 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Priority } from "./types";
 
-// Using the stable 'lite' model as requested
-const MODEL_NAME = 'gemini-flash-lite-latest';
-
-/**
- * Initializes the Gemini API client safely.
- * Directly uses process.env.API_KEY.
- */
-const getAI = () => {
-  const apiKey = process.env.API_KEY;
-  // Strictly check if the key is valid before initializing
-  if (!apiKey || apiKey === 'undefined' || apiKey === '') {
-    console.warn("Gemini API Key is currently missing or invalid.");
-    return null;
-  }
-  try {
-    return new GoogleGenAI({ apiKey });
-  } catch (error) {
-    console.error("Failed to initialize GoogleGenAI:", error);
-    return null;
-  }
-};
+const MODEL_NAME = 'gemini-3-flash-preview';
 
 export const generateQuote = async (seenQuotes: string[] = []) => {
   try {
-    const ai = getAI();
-    if (!ai) return "Success is a series of small wins.";
-
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
     const excludeList = seenQuotes.length > 0 ? `\n\nExclude: ${seenQuotes.join(', ')}` : "";
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
-      contents: `Provide one short, simple motivational quote (max 10 words).${excludeList}`,
-      config: { temperature: 0.8 }
+      contents: `Short motivational quote (max 10 words).${excludeList}`,
+      config: { temperature: 0.9 }
     });
     return response.text?.trim() || "Small progress is still progress.";
   } catch (error) {
-    console.error("Quote Generation Error:", error);
+    console.error("Quote Error:", error);
     return "Focus on the step in front of you.";
   }
 };
 
 export const chatForTasks = async (userInput: string, chatHistory: { role: 'user' | 'model', text: string }[]) => {
   try {
-    const ai = getAI();
-    if (!ai) return { reply: "I'm waiting for the API key to be ready. Please check your settings.", suggestedTasks: [] };
-
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
     const contents = [
       ...chatHistory.map(m => ({
         role: m.role,
@@ -69,7 +45,7 @@ export const chatForTasks = async (userInput: string, chatHistory: { role: 'user
             {
               "title": "Clear task name",
               "description": "Short detail",
-              "priority": "HIGH", "MEDIUM", or "LOW",
+              "priority": "HIGH",
               "timeSlot": "e.g. 10:00 AM"
             }
           ]
@@ -103,7 +79,7 @@ export const chatForTasks = async (userInput: string, chatHistory: { role: 'user
   } catch (error) {
     console.error("AI Assistant Error:", error);
     return { 
-      reply: "I'm having a little trouble connecting. Can you try again?", 
+      reply: "I'm having a little trouble connecting. Please try again later.", 
       suggestedTasks: [] 
     };
   }
@@ -111,14 +87,12 @@ export const chatForTasks = async (userInput: string, chatHistory: { role: 'user
 
 export const analyzeProductivity = async (completed: number, total: number) => {
   try {
-    const ai = getAI();
-    if (!ai) return "Consistency is key to results.";
-
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
       contents: `The user completed ${completed} out of ${total} tasks today. Give one simple tip for focus (max 10 words).`,
     });
-    return response.text?.trim() || "Take a deep breath and start the next task.";
+    return response.text?.trim() || "Consistency is the key to results.";
   } catch (error) {
     return "Focus on one thing at a time.";
   }
