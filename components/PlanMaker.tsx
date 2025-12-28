@@ -13,7 +13,7 @@ interface PlanMakerProps {
 export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAddPlanner }) => {
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     const saved = localStorage.getItem('motivator_chat_history');
-    return saved ? JSON.parse(saved) : [{ role: 'model', text: "Hi! I'm your AI Assistant. Tell me what you'd like to achieve today." }];
+    return saved ? JSON.parse(saved) : [{ role: 'model', text: "Hi! I'm your AI Assistant. Let's build your plan." }];
   });
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -50,7 +50,7 @@ export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAd
         setSuggestedTasks(result.suggestedTasks);
       }
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'model', text: "I'm having trouble connecting. Check your API key." }]);
+      setMessages(prev => [...prev, { role: 'model', text: "Connection error. Please verify that your API_KEY is correctly set in your environment variables." }]);
     } finally {
       setIsLoading(false);
     }
@@ -75,7 +75,7 @@ export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAd
           <h1 className="text-2xl font-bold text-white flex items-center">
             <Bot size={20} className="mr-3 text-[#3B82F6]" /> AI Assistant
           </h1>
-          <p className="text-[10px] text-[#A1A1AA] font-bold uppercase tracking-widest mt-1 ml-8">Simple planning helper</p>
+          <p className="text-[10px] text-[#A1A1AA] font-bold uppercase tracking-widest mt-1 ml-8">System Online</p>
         </div>
         <button 
           onClick={() => { if(confirm('Clear history?')) { setMessages([{ role: 'model', text: "Chat history cleared." }]); setSuggestedTasks([]); localStorage.removeItem('motivator_chat_history'); }}}
@@ -136,14 +136,13 @@ export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAd
         <div ref={scrollRef} />
       </div>
 
-      {/* Standard, clean chat input pinned above nav */}
       <div className="fixed bottom-[75px] left-6 right-6 max-w-md mx-auto z-[120]">
         <div className="relative group">
           <input
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyPress={e => e.key === 'Enter' && handleSend()}
-            placeholder="Plan something today..."
+            placeholder="Type your goal here..."
             className="w-full bg-[#1C1C1E] border border-white/10 text-white placeholder:text-zinc-700 rounded-full px-6 py-4 text-[15px] focus:border-[#3B82F6] outline-none transition-all shadow-2xl"
           />
           <button 

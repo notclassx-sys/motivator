@@ -5,16 +5,31 @@ import { Priority } from "./types";
 const MODEL_NAME = 'gemini-3-flash-preview';
 
 /**
- * The Google GenAI SDK is initialized directly with the environment variable.
- * We assume process.env.API_KEY is pre-configured and valid.
+ * Safely initializes the Gemini client.
+ * Uses process.env.API_KEY as the primary source.
  */
-const getAI = () => {
+const getAI = async () => {
+  const apiKey = process.env.API_KEY;
+  
+  if (!apiKey || apiKey === 'undefined') {
+    // If the key is missing from process.env, check if the environment's selection helper exists
+    if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
+      const hasKey = await window.aistudio.hasSelectedApiKey();
+      if (!hasKey) {
+        await window.aistudio.openSelectKey();
+      }
+    } else {
+      throw new Error("API_KEY_NOT_CONFIGURED");
+    }
+  }
+
+  // Always use a fresh instance to ensure we pick up the latest key from the environment/dialog
   return new GoogleGenAI({ apiKey: process.env.API_KEY! });
 };
 
 export const generateQuote = async (seenQuotes: string[] = []) => {
   try {
-    const ai = getAI();
+    const ai = await getAI();
     const excludeList = seenQuotes.length > 0 ? `\n\nExclude: ${seenQuotes.join(', ')}` : "";
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
@@ -30,7 +45,7 @@ export const generateQuote = async (seenQuotes: string[] = []) => {
 
 export const chatForTasks = async (userInput: string, chatHistory: { role: 'user' | 'model', text: string }[]) => {
   try {
-    const ai = getAI();
+    const ai = await getAI();
     const contents = [
       ...chatHistory.map(m => ({
         role: m.role,
@@ -86,8 +101,11 @@ export const chatForTasks = async (userInput: string, chatHistory: { role: 'user
     return JSON.parse(text);
   } catch (error) {
     console.error("AI Assistant Error:", error);
+    if (error instanceof Error && error.message === "API_KEY_NOT_CONFIGURED") {
+        return { reply: "API Key not found in environment. Please check your Vercel/System settings.", suggestedTasks: [] };
+    }
     return { 
-      reply: "I encountered an error processing your request. Please try again.", 
+      reply: "I'm having trouble connecting to the AI core. Please ensure your API key is active.", 
       suggestedTasks: [] 
     };
   }
@@ -95,7 +113,7 @@ export const chatForTasks = async (userInput: string, chatHistory: { role: 'user
 
 export const analyzeProductivity = async (completed: number, total: number) => {
   try {
-    const ai = getAI();
+    const ai = await getAI();
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
       contents: `The user completed ${completed} out of ${total} tasks today. Give one simple tip for focus (max 10 words).`,
