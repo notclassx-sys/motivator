@@ -5,38 +5,26 @@ import { Priority } from "./types";
 const MODEL_NAME = 'gemini-3-flash-preview';
 
 /**
- * Safely initializes the Gemini client.
- * Uses process.env.API_KEY as the primary source.
+ * Initializes the AI client using the mandatory process.env.API_KEY.
  */
-const getAI = async () => {
+const getClient = () => {
   const apiKey = process.env.API_KEY;
-  
   if (!apiKey || apiKey === 'undefined') {
-    // If the key is missing from process.env, check if the environment's selection helper exists
-    if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
-      const hasKey = await window.aistudio.hasSelectedApiKey();
-      if (!hasKey) {
-        await window.aistudio.openSelectKey();
-      }
-    } else {
-      throw new Error("API_KEY_NOT_CONFIGURED");
-    }
+    throw new Error("API_KEY_NOT_FOUND");
   }
-
-  // Always use a fresh instance to ensure we pick up the latest key from the environment/dialog
-  return new GoogleGenAI({ apiKey: process.env.API_KEY! });
+  return new GoogleGenAI({ apiKey });
 };
 
 export const generateQuote = async (seenQuotes: string[] = []) => {
   try {
-    const ai = await getAI();
-    const excludeList = seenQuotes.length > 0 ? `\n\nExclude: ${seenQuotes.join(', ')}` : "";
+    const ai = getClient();
+    const excludeList = seenQuotes.length > 0 ? `\n\nExclude these specifically: ${seenQuotes.join(', ')}` : "";
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
-      contents: `Provide one short, simple motivational quote (max 10 words).${excludeList}`,
+      contents: `Provide one powerful, elite motivational quote for a high-performer (max 12 words).${excludeList}`,
       config: { temperature: 0.9 }
     });
-    return response.text?.trim() || "Small progress is still progress.";
+    return response.text?.trim() || "The king does not look back.";
   } catch (error) {
     console.error("AI Quote Error:", error);
     return "Focus on the step in front of you.";
@@ -45,7 +33,7 @@ export const generateQuote = async (seenQuotes: string[] = []) => {
 
 export const chatForTasks = async (userInput: string, chatHistory: { role: 'user' | 'model', text: string }[]) => {
   try {
-    const ai = await getAI();
+    const ai = getClient();
     const contents = [
       ...chatHistory.map(m => ({
         role: m.role,
@@ -58,18 +46,18 @@ export const chatForTasks = async (userInput: string, chatHistory: { role: 'user
       model: MODEL_NAME,
       contents: contents,
       config: {
-        systemInstruction: `You are a helpful and professional daily assistant. 
-        If the user wants to accomplish a goal, break it into clear, simple steps.
+        systemInstruction: `You are the ultimate elite performance coach. 
+        Analyze the user's goal and break it down into high-impact, tactical tasks.
         
         Return JSON format ONLY:
         {
-          "reply": "A brief, encouraging response.",
+          "reply": "A concise, motivating response from a world-class mentor.",
           "suggestedTasks": [
             {
-              "title": "Clear task name",
-              "description": "Short detail",
+              "title": "Clear action-oriented task",
+              "description": "High-level detail",
               "priority": "HIGH",
-              "timeSlot": "e.g. 10:00 AM"
+              "timeSlot": "e.g. 09:00 AM"
             }
           ]
         }`,
@@ -97,15 +85,13 @@ export const chatForTasks = async (userInput: string, chatHistory: { role: 'user
       }
     });
 
-    const text = response.text || '{"reply": "Request processed.", "suggestedTasks": []}';
-    return JSON.parse(text);
-  } catch (error) {
+    return JSON.parse(response.text || '{}');
+  } catch (error: any) {
     console.error("AI Assistant Error:", error);
-    if (error instanceof Error && error.message === "API_KEY_NOT_CONFIGURED") {
-        return { reply: "API Key not found in environment. Please check your Vercel/System settings.", suggestedTasks: [] };
-    }
     return { 
-      reply: "I'm having trouble connecting to the AI core. Please ensure your API key is active.", 
+      reply: error.message === "API_KEY_NOT_FOUND" 
+        ? "System Alert: API_KEY is missing in your environment settings. Please add it to Vercel." 
+        : "I'm temporarily offline. Check your network or API key status.", 
       suggestedTasks: [] 
     };
   }
@@ -113,13 +99,13 @@ export const chatForTasks = async (userInput: string, chatHistory: { role: 'user
 
 export const analyzeProductivity = async (completed: number, total: number) => {
   try {
-    const ai = await getAI();
+    const ai = getClient();
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
-      contents: `The user completed ${completed} out of ${total} tasks today. Give one simple tip for focus (max 10 words).`,
+      contents: `The user finished ${completed}/${total} tasks. Provide one elite strategy for increasing focus tomorrow (max 10 words).`,
     });
-    return response.text?.trim() || "Keep showing up every single day.";
+    return response.text?.trim() || "Consolidate your efforts on a single priority.";
   } catch (error) {
-    return "Focus on one priority at a time.";
+    return "Optimize your workflow for maximum output.";
   }
 };

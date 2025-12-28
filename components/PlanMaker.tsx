@@ -50,7 +50,7 @@ export const PlanMaker: React.FC<PlanMakerProps> = ({ planners, onAddTasks, onAd
         setSuggestedTasks(result.suggestedTasks);
       }
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'model', text: "Connection error. Please verify that your API_KEY is correctly set in your environment variables." }]);
+      setMessages(prev => [...prev, { role: 'model', text: "I'm having trouble connecting to the AI system. Please try again in a moment." }]);
     } finally {
       setIsLoading(false);
     }
